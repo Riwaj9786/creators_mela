@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .nav-container {
+    @apply w-full md:w-[94%] lg:w-[90%] xl:w-[85.5%] mx-auto px-[32px] md:px-0 max-w-none;
+  }
+  .container {
+    @apply w-full md:w-[94%] lg:w-[90%] xl:w-[85.5%] mx-auto px-[32px] sm:pl-[40px] md:pl-[32px] lg:pl-[54px] max-w-none;
+  }
+  .container-lg {
+    @apply w-full md:w-[94%] lg:w-[86.3%] mx-auto px-[32px] md:px-0;
+  }
+  .container-xl {
+    @apply w-full md:w-[94%] lg:w-[90%] mx-auto px-[32px] md:px-0;
+  }
+}
+
+
+.navabrImage {
+  background-image: url('./assets//images//Navbar.svg');
+  background-repeat: no-repeat;
+  background-size: cover;
+  object-fit: cover;
+  background-position: left top;
+}
