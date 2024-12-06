@@ -4,8 +4,18 @@ import Apply from "../../Components/HomePageComponents/Apply";
 import BGImage from "../../assets/Images/BackgroundImage.jpg";
 import Animation from "../../assets/Images/Animation.gif";
 import SECBG from "../../assets/Images/section-2-bg.png";
+import ArtistCard from "../../Components/ArtistCard/ArtistCard";
+import FAQ from "../../Components/FAQs/FAQs";
+import { ContentCreators } from "../../assets/ComponentsData/ContentCreator";
+import Marquee from "react-fast-marquee";
+import Banner from "../../assets/Icons/Banner.svg";
 
 const HomePage = () => {
+  const Creators = ContentCreators;
+
+  const textContent = ["Aloft Hotel, Kathmandu", "July 26 & 27, 2024"];
+  const bannerImages = [Banner, Banner];
+
   return (
     <div>
       <TopNav />
@@ -29,6 +39,21 @@ const HomePage = () => {
             <Apply />
           </div>
         </section>
+        <div className="-rotate-6 w-[150%] ">
+          <Marquee speed={100} className="bg-[#E8483F]  ">
+            {[...Array(4)].map((_, idx) =>
+              textContent.map((text, index) => (
+                <div
+                  key={`${idx}-${index}`}
+                  className=" text-[24px] font-[700] p-5 text-white flex gap-[84px]"
+                >
+                  <img src={bannerImages[index]} alt={`banner ${index + 1}`} />
+                  <p>{text}</p>
+                </div>
+              ))
+            )}
+          </Marquee>
+        </div>
         <section className="bg-transparent flex justify-around ml-[130px] mr-[130px]">
           <div className="flex flex-col pt-[131px]">
             <h1 className="font-[700] text-[84px] leading-none text-[#F4C4D1] max-w-[1150px]">
@@ -53,36 +78,87 @@ const HomePage = () => {
           </div>
         </section>
         <section className="relative h-[825px]">
-          <div
-            className="absolute inset-0 bg-center"
-            style={{
-              backgroundImage: `url(${SECBG})`,
-              backgroundRepeat: "no-repeat",
-            }}
-          ></div>
-          <div className="relative z-10 text-white p-6 flex flex-col justify-end h-full">
-            <h1 className="text-2xl md:text-3xl font-semibold">
-              How to be part of Creator’s Mela 2024
-            </h1>
-            <ol className="mt-4 space-y-2">
-              <li>
-                <span className="font-bold">1.</span> Apply to join at
-                usembassynepal.events
-              </li>
-              <li>
-                <span className="font-bold">2.</span> Once selected, download
-                the "Creator’s Mela" apps.
-              </li>
-              <li>
-                <span className="font-bold">3.</span> Choose your preferred
-                session.
-              </li>
-              <li>
-                <span className="font-bold">4.</span> Attend Creator’s Mela
-                2024!
-              </li>
-            </ol>
+          <div className="flex justify-center w-full">
+            <div className="absolute h-[825px]">
+              <img src={SECBG} alt="" className=" w-[600px] h-full" />
+            </div>
           </div>
+          <div className="relative z-10 text-white p-6 flex flex-col h-full">
+            <div className="flex justify-between">
+              <h1 className="text-[104px] leading-none font-[700] mt-[10%] w-[679px] ">
+                How to be part of Creator’s Mela 2024
+              </h1>
+              <ol className="pt-[2%] pl-[200px] w-[40%] h-[50%] leading-none ">
+                <li>
+                  <span className=" text-[#E8483F] text-[80px]">1.</span>
+                  <span className="font-[500] text-[32px]">
+                    Apply to join at usembassynepal.events
+                  </span>
+                </li>
+                <li>
+                  <span className=" text-[#E8483F] text-[80px]">2.</span>
+                  <span className="font-[500] text-[32px]">
+                    Onceselected, download the "Creator’s Mela" apps.
+                  </span>
+                </li>
+                <li>
+                  <span className=" text-[#E8483F] text-[80px]">3.</span>
+                  <span className="font-[500] text-[32px]">
+                    Choose your preferred session.
+                  </span>
+                </li>
+                <li>
+                  <span className=" text-[#E8483F] text-[80px]">4.</span>
+                  <span className="font-[500] text-[32px]">
+                    {" "}
+                    Attend Creator’s Mela 2024!
+                  </span>
+                </li>
+              </ol>
+            </div>
+          </div>
+        </section>
+        <section>
+          {/* Performers section */}
+          <div>
+            <h1 className="text-[#F4C4D1] text-[84px] font-[700]">
+              Performers
+            </h1>
+            <ArtistCard />
+          </div>
+        </section>
+        <section>
+          {/* Speakers section */}
+          <div>
+            <h1 className="text-[#F4C4D1] text-[84px] font-[700]">Speakers</h1>
+            <ArtistCard />
+          </div>
+        </section>
+        <section>
+          {/* Creators section */}
+          <div>
+            <p className="font-[400] text-[32px] leading-none text-white w-[40%]">
+              This event is for current or aspiring content creators in Nepal.
+              Apply to join if you are a:
+            </p>
+            {Creators.map((items) => (
+              <div key={items.id} className="">
+                <div className="text-[#65E8BF] ">
+                  <div className="bg-transparent p-4 flex gap-[47px]">
+                    <h1 className="text-[44px] font-[700]">{items.id}</h1>
+                    <span className="text-[124px] font-[700]">
+                      {items.Creators}
+                    </span>
+                  </div>
+                  <div className="bg-gradient-to-r from-[#FF1C8B] via-[#F05A2A] to-[#65E3C3] h-[1px]"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+        <section>
+          <h1>Frequently Asked Questions</h1>
+          <FAQ />
         </section>
       </div>
       <FooterBottom />
