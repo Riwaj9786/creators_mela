@@ -7,6 +7,12 @@ from django.core.validators import validate_email
 
 from federal.models import Province, District, Municipality
 
+class UserNameUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AppUser
+        fields = ('name',)
+
+
 class UserApplySerializer(serializers.ModelSerializer):
     class Meta:
         model = AppUser
@@ -16,23 +22,22 @@ class UserApplySerializer(serializers.ModelSerializer):
 class SocialMediaSerializer(serializers.ModelSerializer):
     class Meta:
         model = SocialMediaLinks
-        fields = ('profile', 'platform', 'url')
-        read_only_fields = ('profile',)
+        fields = ('platform', 'url')
 
 
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserApplySerializer(read_only=True)
     province = serializers.PrimaryKeyRelatedField(
-        queryset=Province.objects.all(),
-        required=False,
+        queryset = Province.objects.all(),
+        required = False
     )
     district = serializers.PrimaryKeyRelatedField(
-        queryset=District.objects.all(),
-        required=False,
+        queryset = District.objects.all(),
+        required=False
     )
     municipality = serializers.PrimaryKeyRelatedField(
-        queryset=Municipality.objects.all(),
-        required=False,
+        queryset = Municipality.objects.all(),
+        required = False
     )
     profile_social_media_links = SocialMediaSerializer(many=True, read_only=True)
 
@@ -47,6 +52,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             'province',
             'district',
             'municipality',
+            'status',
             'profile_social_media_links',
             'slug',
         )

@@ -1,6 +1,8 @@
 from datetime import timedelta
 import random
 
+from creators_mela.base_permissions import IsOwner
+
 from accounts.models import (
     AppUser,
     Profile,
@@ -9,6 +11,7 @@ from accounts.models import (
 
 from accounts.serializers import (
     UserApplySerializer,
+    UserNameUpdateSerializer,
     ProfileSerializer,
     LoginSerializer,
     SocialMediaSerializer,
@@ -19,7 +22,7 @@ from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 
 from django.core.mail import send_mail
 from django.conf import settings
@@ -36,6 +39,25 @@ from knox import views as knox_views
 from knox.models import AuthToken
 
 # Create your views here.
+class UserUpdateAPIView(APIView):
+    permission_classes = (IsOwner,)
+    def patch(self, request, *args, **kwargs):
+        user = request.user
+        serializer = UserNameUpdateSerializer(user, data=request.data)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {
+                    'message': 'User Updated Successfully!',
+                    'data': serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+
 class UserApplyCreateAPIView(APIView):
     
     def post(self, request, *args, **kwargs):
@@ -295,4 +317,53 @@ class ChangePasswordAPIView(APIView):
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
+
+class ProfileApproveAPIView(APIView):
+    permission_classes = (IsAdminUser,)
+
+    def patch(self, request, slug, *args, **kwargs):
+        try:
+            profile = Profile.objects.get(slug=slug)
+        except Profile.DoesNotExist:
+            return Response(
+                {'message': "Profile Doesn't Exist!"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        profile.status = "Accepted"
+        profile.save()
+        serializer = ProfileSerializer(profile)
+
+        return Response(
+            {
+                'message': "Profile Status Changed to Accepted!",
+                'data': serializer.data    
+            },
+            status=status.HTTP_200_OK
+        )
+    
+    
+class ProfileRejectAPIView(APIView):
+    permission_classes = (IsAdminUser,)
+
+    def patch(self, request, slug, *args, **kwargs):
+        try:
+            profile = Profile.objects.get(slug=slug)
+        except Profile.DoesNotExist:
+            return Response(
+                {'message': "Profile Doesn't Exist!"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        profile.status = "Rejected"
+        profile.save()
+        serializer = ProfileSerializer(profile)
+
+        return Response(
+            {
+                'message': "Profile Status Changed to Rejected!",
+                'data': serializer.data    
+            },
+            status=status.HTTP_200_OK
+        )

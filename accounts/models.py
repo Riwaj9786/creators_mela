@@ -153,6 +153,7 @@ class Profile(BaseModel):
         null=True,
         blank=True
     )
+    interest = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=55, choices=STATUS_CHOICES, default="Pending")
     is_international = models.BooleanField(default=False)
 
@@ -170,7 +171,7 @@ class Profile(BaseModel):
 
 
     def save(self, *args, **kwargs):
-        if not self.slug:
+        if self.slug == None:
             base_slug = slugify(self.user.name)
             slug = base_slug
             count = 1

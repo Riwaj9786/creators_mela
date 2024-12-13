@@ -10,9 +10,13 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
     path('logout_all/', LogoutAllView.as_view(), name='logout-all'),
 
-    path('user_apply/', views.UserApplyCreateAPIView.as_view(), name='user_apply'),
+    path('user/apply/', views.UserApplyCreateAPIView.as_view(), name='user_apply'),
+    path('user/update/', views.UserUpdateAPIView.as_view(), name='update_user'),
+
     path('profile/', views.ProfileListAPIView.as_view(), name='edit_profile'),
     path('profile/edit/', views.ProfileUpdateAPIView.as_view(), name='edit_profile'),
+    path('profile/<slug:slug>/approve/', views.ProfileApproveAPIView.as_view(), name="approve_profile"),
+    path('profile/<slug:slug>/reject/', views.ProfileRejectAPIView.as_view(), name="reject_profile"),
 
     path('media_links/', views.SocialMediaLinkAPIView.as_view(), name='media_links'),
 
