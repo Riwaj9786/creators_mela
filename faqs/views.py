@@ -8,3 +8,4 @@ class FrequentlyAskedQuestionsListAPIView(generics.ListCreateAPIView):
     queryset = FrequentlyAskedQuestion.objects.all()
     serializer_class = FAQSerializer
     permission_classes = (IsAdminUserOrReadOnly,)
+    pagination_class = None
