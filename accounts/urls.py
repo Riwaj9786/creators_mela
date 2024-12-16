@@ -13,8 +13,9 @@ urlpatterns = [
     path('user/apply/', views.UserApplyCreateAPIView.as_view(), name='user_apply'),
     path('user/update/', views.UserUpdateAPIView.as_view(), name='update_user'),
 
-    path('profile/', views.ProfileListAPIView.as_view(), name='edit_profile'),
+    path('profile/', views.ProfileListAPIView.as_view(), name='get_profile'),
     path('profile/edit/', views.ProfileUpdateAPIView.as_view(), name='edit_profile'),
+    path('profile/all/', views.ProfileAllAPIView.as_view(), name='profile_all'),
     path('profile/<slug:slug>/approve/', views.ProfileApproveAPIView.as_view(), name="approve_profile"),
     path('profile/<slug:slug>/reject/', views.ProfileRejectAPIView.as_view(), name="reject_profile"),
 

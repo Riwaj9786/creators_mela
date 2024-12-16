@@ -10,6 +10,7 @@ from accounts.models import (
 )
 
 from accounts.serializers import (
+    ProfileListSerializer,
     UserApplySerializer,
     UserNameUpdateSerializer,
     ProfileSerializer,
@@ -23,6 +24,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
+from rest_framework.filters import SearchFilter
+
+from django_filters.rest_framework import DjangoFilterBackend
 
 from django.core.mail import send_mail
 from django.conf import settings
@@ -367,3 +371,12 @@ class ProfileRejectAPIView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
+
+class ProfileAllAPIView(generics.ListAPIView):
+    queryset = Profile.objects.all()
+    serializer_class = ProfileListSerializer
+    permission_classes = (IsAdminUser,)
+    filter_backends = (SearchFilter, DjangoFilterBackend,)
+    search_list = ('profile__user__name',)
+    filterset_fields = ('gender', 'status')

@@ -25,6 +25,13 @@ class SocialMediaSerializer(serializers.ModelSerializer):
         fields = ('platform', 'url')
 
 
+class ProfileListSerializer(serializers.ModelSerializer):
+    user = UserApplySerializer(read_only=True)
+    class Meta:
+        model = Profile
+        fields = ('user', 'age', 'gender', 'status',)
+
+
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserApplySerializer(read_only=True)
     province = serializers.PrimaryKeyRelatedField(
