@@ -27,7 +27,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1']
 
 
 # Application definition
@@ -127,8 +127,9 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
 }
 
-KNOX = {
-    'TOKEN_TTL': timedelta(hours=1),  # Token expires after 7 days
+REST_KNOX = {
+    'TOKEN_TTL': timedelta(hours=1),
+    'AUTO_REFRESH': True,
 }
 
 # Password validation
