@@ -1,39 +1,27 @@
 from django.contrib import admin
 
-from events.models import Event, EventSpeakers, EventAttendees
+from events.models import Event, Session, Hall
 
 # Register your models here.
-class AttendeesInline(admin.TabularInline):
-    model = EventAttendees
-    extra = 1
-    fields = ('attendee',)
-    can_delete = False
-
-
-class SpeakersInline(admin.TabularInline):
-    model = EventSpeakers
-    extra = 1
-    fields = ('speaker',)
-    can_delete = False
-
-
 @admin.register(Event)
-class EventAdmin(admin.ModelAdmin):
-    list_display = ('name', 'start_time', 'end_time', 'hall')
-    list_display_links = ('name', 'start_time', 'end_time', 'hall')
+class EventAdmin(admin.ModelAdmin): 
+    list_display = ('name', 'venue', 'date')
+    list_display_links = ('name', 'venue', 'date')
+    search_fields = ('name', 'venue')
+
+
+@admin.register(Session)
+class SessionAdmin(admin.ModelAdmin):
+    list_display = ('session_name', 'event__name', 'start_time', 'end_time', 'hall')
+    list_display_links = ('session_name', 'event__name', 'start_time', 'end_time', 'hall')
     list_filter = ('hall',)
-    search_fields = ('name',)
-    ordering = ('hall', 'start_time')
-    inlines = (SpeakersInline, AttendeesInline,)
+    search_fields = ('session_name',)
+    ordering = ('event__name', 'hall', 'start_time',)
 
 
-# @admin.register(EventSpeakers)
-# class EventSpeakersAdmin(admin.ModelAdmin):
-#     list_display = ('event', 'speaker', 'event__start_time', 'event__end_time')
-#     list_display_links = ('event', 'speaker')
-
-
-# @admin.register(EventAttendees)
-# class AttendeesAdmin(admin.ModelAdmin):
-#     list_display = ('event', 'attendee')
-#     list_display_links = ('event', 'attendee')
+@admin.register(Hall)
+class HallAdmin(admin.ModelAdmin):
+    list_display = ('hall_name', 'event__name')                                                                     
+    list_display_links = ('hall_name', 'event__name')
+    search_fields = ('hall_name', 'event__name')
+    ordering = ('event__name', 'hall_name',)

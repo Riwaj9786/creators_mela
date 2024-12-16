@@ -1,63 +1,223 @@
 from django.utils import timezone
 
+from events.models import Session, Event
+from events.serializers import (
+        SessionSerializer,
+        SessionListSerializer,
+        EventSerializer,
+        EventDetailSerializer,
+        OngoingSessionSerializer
+    )
+
+from rest_framework import generics
+from rest_framework.views import APIView
+from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.filters import SearchFilter
 
 from django_filters.rest_framework import DjangoFilterBackend
 
-from events.models import Event, EventSpeakers, EventAttendees
-from events.serializers import SpeakerSerializer, EventDetailSerializer, AttendeeSerializer
 
-# Create your views here.
 class EventListAPIView(generics.ListAPIView):
     queryset = Event.objects.all()
-    serializer_class = EventDetailSerializer
-    permission_classes = (IsAuthenticated,)
+    serializer_class = EventSerializer
+    permission_classes = (permissions.AllowAny,)
     filter_backends = (DjangoFilterBackend, SearchFilter)
-    search_fields = ('name',)
-    filterset_fields = ('hall', 'date')
+    search_fields = ('name', 'venue', 'slug')
+    fiterset_fields = ('date',)
 
 
-class EventAttendeesAPIView(generics.ListAPIView):
-    queryset = EventAttendees.objects.all()
-    serializer_class = AttendeeSerializer
-    permission_classes = (AllowAny,)
+class EventCreateAPIView(generics.CreateAPIView):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+    permission_classes = (permissions.IsAdminUser,)
 
 
-class OngoingSessionAPIView(APIView):
-    permission_classes = (AllowAny,)
+class EventRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+    permission_classes = (permissions.IsAdminUser,)
 
-    def get(self, request, *args, **kwargs):
-        ongoing_events = Event.objects.filter(
-            start_time__gt = timezone.now().time(),
-            end_time__lt = timezone.now().time()
+
+class SessionCreateAPIView(APIView):
+    permission_classes = (permissions.IsAdminUser,)
+
+    def post(self, request, slug, *args, **kwargs):
+        try:
+            event = Event.objects.get(slug=slug)
+        
+        except Event.DoesNotExist:
+            return Response(
+                {'message': 'Event doesn\'t exist!'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        serializer = SessionSerializer(data=request.data, context={'event': event})
+        if serializer.is_valid():
+            serializer.save()
+
+            return Response(
+                {
+                    'message': 'Session Created Successfully!',
+                    'data': serializer.data
+                },
+                status=status.HTTP_201_CREATED
+            )
+        
+        return Response(
+            {
+                serializer.errors
+            },
+            status=status.HTTP_400_BAD_REQUEST
         )
 
-        serializer = EventDetailSerializer(ongoing_events, many=True)
 
-        if serializer:
+class SessionInEventAPIView(generics.ListAPIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def get(self, request, slug=None, *args, **kwargs):
+        if slug:
+            try:
+                event = Event.objects.get(slug=slug)
+            except Event.DoesNotExist:
+                return Response(
+                    {
+                        'message': "Provided Event doesn't Exists!"
+                    },
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            sessions = Session.objects.filter(event=event)
+
+            serializer = SessionListSerializer(sessions, many=True)
+
+            return Response(
+                {
+                    'event': event.name,
+                    'data': serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
+        else:
+            sessions = Session.objects.all()
+            serializer = SessionListSerializer(sessions, many=True)
+
             return Response(
                 serializer.data,
                 status=status.HTTP_200_OK
             )
-        else:
+
+
+
+class SessionRetrieveUpdateDestroyAPIView(APIView):
+    permission_classes = (permissions.IsAdminUser,)
+
+    def get(self, requser, slug, *args, **kwargs):
+        try:
+            session = Session.objects.get(slug=slug)
+        except Session.DoesNotExist:
             return Response(
-                {'message': 'There are no ongoing events currently!'},
+                {
+                    'message': "Session doesn't exist!"
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        serializer = SessionListSerializer(session)
+
+        return Response(
+            {'data': serializer.data},
+            status=status.HTTP_200_OK
+        )
+
+
+    def patch(self, request, slug, *args, **kwargs):
+        try:
+            session = Session.objects.get(slug=slug)
+
+        except Session.DoesNotExist:
+            return Response(
+                {
+                    'message': "Session doesn't exist!"
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        serializer = SessionSerializer(session, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {
+                    'message': 'Session Updated Successfully!',
+                    'data': serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
+        
+        return Response(
+            {
+                serializer.errors
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+
+    def delete(self, requser, slug, *args, **kwargs):
+        try:
+            session = Session.objects.get(slug=slug)
+        except Session.DoesNotExist:
+            return Response(
+                {
+                    'message': "Session doesn't exist!"
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        session.delete()
+
+        return Response(
+            {'message': 'Session Deleted Successfully!'},
+            status=status.HTTP_204_NO_CONTENT
+        )
+
+
+class OngoingSessionListAPIView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def get(self, request, *args, **kwargs):
+        ongoing_sessions = Session.objects.filter(
+            event__date = timezone.localtime(timezone.now()).date(),
+            start_time__lte = timezone.localtime(timezone.now()).time(),
+            end_time__gte = timezone.localtime(timezone.now()).time() 
+        )
+
+        count = ongoing_sessions.count()
+
+        serializer = OngoingSessionSerializer(ongoing_sessions, many=True)
+
+        return Response(
+            {
+                'count': count,
+                'data': serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
+    
+
+class EventDetailListAPIView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def get(self, request, slug, *args, **kwargs):
+        try:
+            event = Event.objects.get(slug=slug)
+        except Event.DoesNotExist:
+            return Response(
+                {'message': "Provided Event doesn't exist!"},
                 status=status.HTTP_404_NOT_FOUND
             )
         
+        serializer = EventDetailSerializer(event)
 
-class EventCreateAPIView(generics.CreateAPIView):
-    queryset = Event.objects.all()
-    serializer_class = EventDetailSerializer
-    permission_classes = (IsAdminUser,)
-
-
-class EventUpdateAPIView(generics.UpdateAPIView):
-    queryset = Event.objects.all()
-    serializer_class = EventDetailSerializer
-    permission_classes = (IsAdminUser,)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
