@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from events.models import Event, Session, Hall
+from events.models import Event, Session, Hall, RegisteredSession
 
 # Register your models here.
 @admin.register(Event)
@@ -25,3 +25,10 @@ class HallAdmin(admin.ModelAdmin):
     list_display_links = ('hall_name', 'event__name')
     search_fields = ('hall_name', 'event__name')
     ordering = ('event__name', 'hall_name',)
+
+
+@admin.register(RegisteredSession)
+class RegisteredSession(admin.ModelAdmin):
+    list_display = ('user', 'session', 'registered_date')
+    list_display_links = ('user', 'session', 'registered_date')
+    search_fields = ('user',)

@@ -142,3 +142,23 @@ class Session(models.Model):
 
     def __str__(self):
         return self.session_name
+    
+
+class RegisteredSession(models.Model):
+    user = models.ForeignKey(
+        'accounts.Profile',
+        on_delete=models.PROTECT,
+        related_name='registered_users'
+    )
+    session = models.ForeignKey(
+        Session,
+        on_delete=models.PROTECT,
+        related_name='session_users'
+    )
+    registered_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'session')
+
+    def __str__(self):
+        return f"{self.user}_{self.session}"
