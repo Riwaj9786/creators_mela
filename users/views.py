@@ -1,9 +1,7 @@
 from accounts.models import Profile
 from accounts.serializers import ProfileSerializer, InviteSerializer
 
-from users.serializers import AboutMeSerializers, UserEventsSerializer
-
-from events.models import EventAttendees
+from users.serializers import AboutMeSerializers
 
 from creators_mela.base_permissions import IsAdminOrOwner
 
@@ -56,7 +54,7 @@ class SpeakerInviteAPIView(APIView):
         if serializer.is_valid():
             emails = serializer.validated_data['email']
             url = reverse('accounts:user_apply')
-            invitation_link = f"{request.scheme}://{request.get_host()}/{url}"
+            invitation_link = f"{request.scheme}://{request.get_host()}{url}"
 
             subject = "You are Invited!"
             message = f"You can apply for the Creators' Mela with the provided link: \n {invitation_link}"
@@ -96,29 +94,3 @@ class AboutProfileAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-
-class UserRegisteredEventsAPIView(APIView):
-    permission_classes = (IsAdminOrOwner,)
-
-    def get(self, request, slug=None, *args, **kwargs):
-        try:
-            if slug:
-                profile = Profile.objects.get(slug=slug)
-            else:
-                profile = Profile.objects.get(user=request.user)
-
-            attendee_entries = EventAttendees.objects.filter(attendee=profile)
-            print(attendee_entries)
-            
-            serializer = UserEventsSerializer(attendee_entries, many=True)
-            print(serializer.data)
-
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-
-        except Profile.DoesNotExist:
-            return Response({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
-        except EventAttendees.DoesNotExist:
-            return Response({"error": "No registered events found"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

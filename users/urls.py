@@ -10,5 +10,5 @@ urlpatterns = [
 
     path('about/', views.AboutProfileAPIView.as_view(), name='user_profile'),
     path('about/<slug:slug>/', views.AboutProfileAPIView.as_view(), name='user_profile'),
-    path('about/<slug:slug>/events/', views.UserRegisteredEventsAPIView.as_view(), name='registered_events'),
+    # path('about/<slug:slug>/events/', views.UserRegisteredEventsAPIView.as_view(), name='registered_events'),
 ]
