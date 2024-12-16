@@ -27,7 +27,7 @@ class ProfileAdmin(admin.ModelAdmin):
     list_display_links = ('user', 'user__name', 'gender')
     list_filter = ('gender', 'status', 'user_type')
     list_editable = ('status',)
-    readonly_fields = ('user', 'profile_picture', 'phone', 'age', 'province', 'district', 'municipality', 'gender', 'created_at', 'slug')
+    readonly_fields = ('user', 'profile_picture', 'phone', 'age', 'province', 'district', 'municipality', 'gender', 'created_at')
     inlines = (SocialMediaInline,)
 
 

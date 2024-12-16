@@ -64,9 +64,14 @@ class AppUser(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = "User"
         verbose_name_plural = "1. Users"
+  
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+        super().save(*args, **kwargs) 
+
+        if hasattr(self, 'profile'):
+            self.profile.slug = slugify(self.name)
+            self.profile.save()
         
     
     def __str__(self):
@@ -94,6 +99,7 @@ def create_user_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(
             user = instance,
+            slug = slugify(instance.name)
         )
 
 
@@ -171,7 +177,7 @@ class Profile(BaseModel):
 
 
     def save(self, *args, **kwargs):
-        if self.slug == None:
+        if not self.slug:
             base_slug = slugify(self.user.name)
             slug = base_slug
             count = 1
