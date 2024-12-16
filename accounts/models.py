@@ -187,19 +187,20 @@ class Profile(BaseModel):
 
 
     def __str__(self):
-        return f"{self.user.email}"        
+        return f"{self.user.email}"   
+
+
+
+class Platform(models.Model):
+    platform_name = models.CharField(max_length=125)
+
+    def __str__(self):
+        return self.platform_name     
 
 
 class SocialMediaLinks(models.Model):
-    PLATFORM_TYPE_CHOICES = (
-        ('FB', "Facebook"),
-        ('IG', "Instagram"),
-        ('YT', "Youtube"),
-        ('X', "X"),
-    )
-
     profile = models.ForeignKey(Profile, on_delete=models.PROTECT, related_name='profile_social_media_links')
-    platform = models.CharField(max_length=55, choices=PLATFORM_TYPE_CHOICES)
+    platform = models.ForeignKey(Platform, on_delete=models.PROTECT, related_name='platform', null=True, blank=True)
     url = models.URLField()
 
     class Meta:
