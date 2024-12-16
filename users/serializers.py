@@ -3,15 +3,19 @@ from rest_framework import serializers
 from accounts.models import Profile
 from accounts.serializers import UserApplySerializer
 
-from events.models import Event
+from events.models import RegisteredSession
 
 from federal.serializers import ProvinceSerializer, DistrictBriefSerializer
 
 
-class EventBriefSerializer(serializers.ModelSerializer):
+class RegisteredSessionSerializer(serializers.ModelSerializer):
+    session_date = serializers.DateTimeField(source='session.session_date', read_only=True)
+    session_name = serializers.CharField(source='session.session_name', read_only=True)
+    registered_date = serializers.DateTimeField(read_only=True)
+
     class Meta:
-        model = Event
-        fields = ('name', 'date')
+        model = RegisteredSession
+        fields = ('session_name', 'session_date', 'registered_date')
 
 
 

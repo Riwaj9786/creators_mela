@@ -1,9 +1,11 @@
 from accounts.models import Profile
 from accounts.serializers import ProfileSerializer, InviteSerializer
 
-from users.serializers import AboutMeSerializers
+from events.models import Session, RegisteredSession
 
-from creators_mela.base_permissions import IsAdminOrOwner
+from users.serializers import AboutMeSerializers, RegisteredSessionSerializer
+
+from creators_mela.base_permissions import IsAdminOrSessionOwner
 
 from rest_framework import generics
 from rest_framework.filters import SearchFilter
@@ -94,3 +96,85 @@ class AboutProfileAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+
+class RegisterSessionAPIView(APIView):
+    permission_classes = (IsAuthenticated,)
+    def post(self, request, slug, *args, **kwargs):
+        try:
+            session = Session.objects.get(slug=slug)
+        except Session.DoesNotExist:
+            return Response(
+                {
+                    'message': "Session doesn't exist!"
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        user = request.user
+        print(user)
+
+        try:
+            profile = user.profile
+        except Profile.DoesNotExist:
+            return Response(
+                {'message': "Profile doesn't exist!"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        print(profile)
+        if profile.status != 'Accepted':
+            return Response(
+                {'message': "You are not Accepted Profile to be registering in the session."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        if RegisteredSession.objects.filter(session=session, user=profile):
+            return Response(
+                {'message': "You have already registered to the Session!"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        available_seats = RegisteredSession.objects.filter(session=session).count()
+
+        if available_seats < session.total_seats:
+            registered_session = RegisteredSession.objects.create(session=session, user=profile)
+            session.attendees.add(profile)
+        else:
+            return Response(
+                {'message': "The Session is already occupied!"}
+            )
+
+        serializer = RegisteredSessionSerializer(registered_session)
+
+        return Response(
+            {
+                'message': "You are successfully registered!",
+                'data': serializer.data
+            },
+            status=status.HTTP_201_CREATED
+        )
+    
+
+class UserRegisteredEventAPIView(APIView):
+    permission_classes = (IsAdminOrSessionOwner,)
+
+    def get(self, request, slug, *args, **kwargs):
+        try:
+            profile = Profile.objects.get(slug=slug)
+        except Profile.DoesNotExist:
+            return Response(
+                {'message': "Profile Doesn't exist!"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        registered_sessions = RegisteredSession.objects.filter(user=profile)
+
+        for session in registered_sessions:
+            self.check_object_permissions(request, session)
+        
+        serializer = RegisteredSessionSerializer(registered_sessions, many=True)
+
+        return Response(
+            {'sessions': serializer.data},
+            status=status.HTTP_200_OK
+        )
