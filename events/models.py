@@ -132,7 +132,7 @@ class Session(models.Model):
 
         super(Session, self).save(*args, **kwargs)       
         
-        self.full_clean()
+        self.full_clean() 
 
 
     def clean(self, *args, **kwargs):

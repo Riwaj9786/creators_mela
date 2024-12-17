@@ -12,6 +12,7 @@ class ProvinceListAPIView(generics.ListAPIView):
     permission_classes = (AllowAny,)
     filter_backends = (SearchFilter,)
     search_fields = ('name',)
+    pagination_class = None
 
 
 class DistrictListAPIView(generics.ListAPIView):
@@ -21,6 +22,7 @@ class DistrictListAPIView(generics.ListAPIView):
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filterset_fields = ('province__name',)
     search_fields = ('name',)
+    pagination_class = None
 
 
 class MunicipalityListAPIView(generics.ListAPIView):
@@ -30,3 +32,4 @@ class MunicipalityListAPIView(generics.ListAPIView):
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filterset_fields = ('district__name', 'district__province__name')
     search_fields = ('name',)
+    pagination_class = None

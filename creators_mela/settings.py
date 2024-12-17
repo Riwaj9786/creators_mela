@@ -27,7 +27,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['127.0.0.1', '192.168.18.4']
+ALLOWED_HOSTS = ['127.0.0.1', '192.168.18.4', '192.168.1.5']
 
 
 # Application definition
@@ -38,6 +38,7 @@ LOCAL_APPS = [
     'faqs',
     'users',
     'contact',
+    'analytics',
 ]
 
 THIRD_PARTY_APPS = [
@@ -198,6 +199,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'accounts.AppUser'
+
+SESSION_COOKIE_AGE = 3600
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 
 customColorPalette = [
         {

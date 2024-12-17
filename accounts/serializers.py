@@ -54,7 +54,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             'user',
             'profile_picture',
             'phone',
-            'age',
+            'date_of_birth',
             'gender',
             'province',
             'district',

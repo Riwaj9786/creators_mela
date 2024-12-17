@@ -40,7 +40,6 @@ from django.utils import timezone
 from django.urls import reverse
 
 from knox import views as knox_views
-from knox.models import AuthToken
 
 # Create your views here.
 class UserUpdateAPIView(APIView):

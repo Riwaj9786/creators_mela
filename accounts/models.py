@@ -7,6 +7,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 from django.utils.text import slugify
+from django.utils import timezone
 
 from federal.models import Province, District, Municipality
 
@@ -70,8 +71,18 @@ class AppUser(AbstractBaseUser, PermissionsMixin):
         super().save(*args, **kwargs) 
 
         if hasattr(self, 'profile'):
-            self.profile.slug = slugify(self.name)
-            self.profile.save()
+            base_slug = slugify(self.name)
+            slug = base_slug
+            count = 1
+
+            # Ensure the slug is unique
+            while Profile.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{count}"
+                count += 1
+
+            return slug
+
+        super().save(*args, **kwargs)
         
     
     def __str__(self):
@@ -147,7 +158,7 @@ class Profile(BaseModel):
         )
     
     phone = models.CharField(max_length=15, blank=True, null=True)
-    age = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(125)], null=True, blank=True)
+    date_of_birth = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=55, choices=GENDER_CHOICES, null=True, blank = True)
     province = models.ForeignKey(Province, null=True, blank = True, on_delete=models.PROTECT, related_name='user_province')
     district = models.ForeignKey(District, null=True, blank = True, on_delete=models.PROTECT, related_name='user_district')
@@ -177,19 +188,15 @@ class Profile(BaseModel):
 
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            base_slug = slugify(self.user.name)
-            slug = base_slug
-            count = 1
-
-            # Ensure the slug is unique
-            while Profile.objects.filter(slug=slug).exists():
-                slug = f"{base_slug}-{count}"
-                count += 1
-
-            self.slug = slug
-
         super().save(*args, **kwargs)
+
+
+    @property
+    def age(self):
+        today = timezone.now().date()
+
+        age = today.year - self.date_of_birth.year - ((today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day))
+        return age
 
 
     def __str__(self):
