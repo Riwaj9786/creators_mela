@@ -28,7 +28,7 @@ class HallAdmin(admin.ModelAdmin):
 
 
 @admin.register(RegisteredSession)
-class RegisteredSession(admin.ModelAdmin):
+class RegisteredSessionAdmin(admin.ModelAdmin):
     list_display = ('user', 'session', 'registered_date')
     list_display_links = ('user', 'session', 'registered_date')
     search_fields = ('user',)

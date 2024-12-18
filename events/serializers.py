@@ -43,7 +43,7 @@ class SessionSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'session_name', 'banner', 'description',
             'total_seats', 'start_time', 'end_time', 'hall',
-            'moderator', 'speakers', 'attendees', 'slug'
+            'moderator', 'speakers', 'attendees'
         ]
 
     def create(self, validated_data):
@@ -100,7 +100,8 @@ class SessionSerializer(serializers.ModelSerializer):
             instance.attendees.set(attendees_data)
 
         return instance
-    
+
+
 
 class SessionListSerializer(serializers.ModelSerializer):
     speakers = SpeakerNameSerializer(read_only = True, many=True)
@@ -111,8 +112,19 @@ class SessionListSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'session_name',
             'start_time', 'end_time', 'hall',
-            'speakers', 'attendees', 'slug'
+            'speakers', 'attendees'
         )
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        request = self.context.get('request')
+
+        if not request or not request.user.is_authenticated:
+            representation.pop('attendees', None)
+
+        return representation
+
 
 class HallSessionSerializer(serializers.ModelSerializer):
     session_in_hall = SessionListSerializer(read_only=True, many=True)

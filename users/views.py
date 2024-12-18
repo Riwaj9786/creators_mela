@@ -54,7 +54,7 @@ class SpeakerInviteAPIView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = InviteSerializer(data=request.data)
         if serializer.is_valid():
-            emails = serializer.validated_data['email']
+            emails = serializer.validated_data['email'] # type: ignore
             url = reverse('accounts:user_apply')
             invitation_link = f"{request.scheme}://{request.get_host()}{url}"
 
@@ -136,7 +136,7 @@ class RegisterSessionAPIView(APIView):
         
         available_seats = RegisteredSession.objects.filter(session=session).count()
 
-        if available_seats < session.total_seats:
+        if available_seats <= session.total_seats: # type: ignore
             registered_session = RegisteredSession.objects.create(session=session, user=profile)
             session.attendees.add(profile)
         else:
@@ -178,3 +178,31 @@ class UserRegisteredEventAPIView(APIView):
             {'sessions': serializer.data},
             status=status.HTTP_200_OK
         )
+    
+
+class RegisteredUserDestroyAPIVIew(APIView):
+    permission_classes = (IsAdminUser,)
+
+    def delete(self, request, slug, pk, *args, **kwargs):
+        try:
+            profile = Profile.objects.get(slug=slug)
+            try:
+                registered_sessions = RegisteredSession.objects.get(user=profile, pk=pk)
+                registered_sessions.delete()
+
+            except RegisteredSession.DoesNotExist:
+                return Response(
+                    {'message': "The user has not registered for such session."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            return Response(
+                {'message': "Entry Deleted Successfully!"},
+                status=status.HTTP_204_NO_CONTENT
+            )
+
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )

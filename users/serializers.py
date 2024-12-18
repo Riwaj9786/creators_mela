@@ -15,8 +15,8 @@ class RegisteredSessionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RegisteredSession
-        fields = ('session_name', 'session_date', 'registered_date')
-
+        fields = ('id', 'session_name', 'session_date', 'registered_date')
+        read_only_fields = ('id', 'registered_date')
 
 
 class AboutMeSerializers(serializers.ModelSerializer):

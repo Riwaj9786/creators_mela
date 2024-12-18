@@ -14,4 +14,5 @@ urlpatterns = [
 
     path('register/session/<slug:slug>/', views.RegisterSessionAPIView.as_view(), name='register_session'),
     path('<slug:slug>/registered_events/', views.UserRegisteredEventAPIView.as_view(), name='user_registered_sessions'),
+    path('<slug:slug>/registered_events/<pk>/', views.RegisteredUserDestroyAPIVIew.as_view(), name='delete_registered_user_from_session'),
 ]

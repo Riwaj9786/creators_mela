@@ -1,6 +1,6 @@
 from django.utils import timezone
 
-from events.models import Session, Event
+from events.models import Session, Event, RegisteredSession
 from events.serializers import (
         SessionSerializer,
         SessionListSerializer,
@@ -67,7 +67,7 @@ class SessionCreateAPIView(APIView):
         
         return Response(
             {
-                serializer.errors
+                'errors': serializer.errors
             },
             status=status.HTTP_400_BAD_REQUEST
         )
@@ -92,7 +92,13 @@ class SessionInEventAPIView(generics.ListAPIView):
         else:
             self.event = None
             return Session.objects.all()
-    
+
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({'request': self.request})
+        return context
+
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -153,7 +159,7 @@ class SessionRetrieveUpdateDestroyAPIView(APIView):
         
         return Response(
             {
-                serializer.errors
+                'message': serializer.errors
             },
             status=status.HTTP_400_BAD_REQUEST
         )

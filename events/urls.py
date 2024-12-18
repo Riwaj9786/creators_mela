@@ -13,4 +13,4 @@ urlpatterns = [
     path('list/', views.EventListAPIView.as_view(), name='events_list'),
     path('create/', views.EventCreateAPIView.as_view(), name='event_create'),
     path('<pk>/', views.EventRetrieveUpdateDestroyAPIView.as_view(), name='event_retrieve_update_destroy'),
-] 
+]
