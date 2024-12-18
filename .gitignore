@@ -1,2 +1,6 @@
 virtualenv/
 static/
+media/
+
+.gitignore
+.env
