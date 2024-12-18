@@ -29,7 +29,7 @@ class AppUserManager(BaseUserManager):
 
         user.save(using=self.db)
         return user
-    
+
 
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
@@ -65,7 +65,7 @@ class AppUser(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = "User"
         verbose_name_plural = "1. Users"
-  
+
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs) 
@@ -179,8 +179,6 @@ class Profile(BaseModel):
 
     slug = models.SlugField(unique=True, null=True, blank=True)
 
-    def __str__(self):
-        return f"{self.user.name}"
 
     class Meta:
         verbose_name = "Profile"
@@ -189,6 +187,10 @@ class Profile(BaseModel):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
+
+
+    def __str__(self): # type: ignore
+        return f"{self.user.name}"
 
 
     @property

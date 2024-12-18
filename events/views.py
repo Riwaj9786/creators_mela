@@ -74,41 +74,38 @@ class SessionCreateAPIView(APIView):
 
 
 class SessionInEventAPIView(generics.ListAPIView):
+    serializer_class = SessionListSerializer
     permission_classes = (permissions.AllowAny,)
 
-    def get(self, request, slug=None, *args, **kwargs):
+    def get_queryset(self):
+        slug = self.kwargs.get('slug')
+
         if slug:
             try:
-                event = Event.objects.get(slug=slug)
+                self.event = Event.objects.get(slug=slug)
             except Event.DoesNotExist:
                 return Response(
-                    {
-                        'message': "Provided Event doesn't Exists!"
-                    },
+                    {'message': "Event doesn't exist!"},
                     status=status.HTTP_404_NOT_FOUND
                 )
-
-            sessions = Session.objects.filter(event=event)
-
-            serializer = SessionListSerializer(sessions, many=True)
-
-            return Response(
-                {
-                    'event': event.name,
-                    'data': serializer.data
-                },
-                status=status.HTTP_200_OK
-            )
+            return Session.objects.filter(event=self.event)
         else:
-            sessions = Session.objects.all()
-            serializer = SessionListSerializer(sessions, many=True)
+            self.event = None
+            return Session.objects.all()
+    
 
-            return Response(
-                serializer.data,
-                status=status.HTTP_200_OK
-            )
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
 
-
+        return Response(
+            {
+                'event': self.event.name,
+                'data': serializer.data,
+            },
+            status=status.HTTP_200_OK
+        )
+    
 
 class SessionRetrieveUpdateDestroyAPIView(APIView):
     permission_classes = (permissions.IsAdminUser,)
