@@ -14,9 +14,22 @@ from federal.serializers import ProvinceSerializer
 from django.db.models import Count, F
 from django.utils import timezone
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 # Create your views here.
 class ProfileAndRegistrationCountView(APIView):
     permission_classes = (IsAdminUser,)
+
+    @swagger_auto_schema(
+        operation_description="This endpoint returns the analytics of the total users and the user types. This endpoint is only accessible by the ADMIN Users!",
+        responses={
+            200: openapi.Response('Success!'),
+            400: 'Bad Request',
+            401: "Unauthorized: You must be authenticated to access the endpoint.",
+            403: "Forbidden: You must be an ADMIN User to access."
+        }
+    )
 
     def get(self, request, *args, **kwargs):
         
@@ -54,6 +67,16 @@ class ProfileAndRegistrationCountView(APIView):
 
 class GenderCountAPIView(APIView):
     permission_classes = (IsAdminUser,)
+
+    @swagger_auto_schema(
+        operation_description="This endpoint returns the analytics of the genders of the registered users. This endpoint is only accessible by the ADMIN Users!",
+        responses={
+            200: openapi.Response('Success!'),
+            400: 'Bad Request',
+            401: "Unauthorized: You must be authenticated to access the endpoint.",
+            403: "Forbidden: You must be an ADMIN User to access."
+        }
+    )
 
     def get(self, request, *args, **kwargs):
         
@@ -94,6 +117,16 @@ class GenderCountAPIView(APIView):
 class ProvinceAnalyticsAPIView(APIView):
     permission_classes = (IsAdminUser,)
 
+    @swagger_auto_schema(
+        operation_description="This endpoint returns the analytics of user based on the Province they are from. This endpoint is only accessible by the ADMIN Users!",
+        responses={
+            200: openapi.Response('Success!'),
+            400: 'Bad Request',
+            401: "Unauthorized: You must be authenticated to access the endpoint.",
+            403: "Forbidden: You must be an ADMIN User to access."
+        }
+    )
+
     def get(self, request, *args, **kwargs):
         
         return Response(
@@ -113,6 +146,16 @@ class ProvinceAnalyticsAPIView(APIView):
 
 class UserAgeAnalyticsAPIView(APIView):
     permission_classes = (IsAdminUser,)
+
+    @swagger_auto_schema(
+        operation_description="This endpoint returns the analytics of the users based on their age groups. This endpoint is only accessible by the ADMIN Users!",
+        responses={
+            200: openapi.Response('Success!'),
+            400: 'Bad Request',
+            401: "Unauthorized: You must be authenticated to access the endpoint.",
+            403: "Forbidden: You must be an ADMIN User to access."
+        }
+    )
 
     def get(self, request, *args, **kwargs):
         return Response(

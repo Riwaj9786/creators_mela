@@ -31,4 +31,4 @@ class ProfileAdmin(admin.ModelAdmin):
     inlines = (SocialMediaInline,)
 
 
-# admin.site.register(UserType)
+admin.site.register(UserType)

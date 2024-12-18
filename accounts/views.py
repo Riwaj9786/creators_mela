@@ -39,11 +39,25 @@ from django.utils.encoding import force_bytes
 from django.utils import timezone
 from django.urls import reverse
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 from knox import views as knox_views
 
 # Create your views here.
 class UserUpdateAPIView(APIView):
     permission_classes = (IsOwner,)
+
+    @swagger_auto_schema(
+        operation_description="This endpoint updates the User Profile and can only be accessed if and only if the request user tries to access their own object.",
+        responses={
+            200: openapi.Response('Success!'),
+            400: 'Bad Request',
+            401: "Unauthorized: You must be authenticated to access the endpoint.",
+            403: "Forbidden: You must be an OWNER User to access."
+        }
+    )
+
     def patch(self, request, *args, **kwargs):
         user = request.user
         serializer = UserNameUpdateSerializer(user, data=request.data)
@@ -62,7 +76,15 @@ class UserUpdateAPIView(APIView):
         
 
 class UserApplyCreateAPIView(APIView):
-    
+
+    @swagger_auto_schema(
+        operation_description="This endpoint creates post request for new users to apply. This endpoint is accessible to all the Users!",
+        responses={
+            200: openapi.Response('Success! Your default password is \'password123\''),
+            400: 'Bad Request',
+        }
+    )
+
     def post(self, request, *args, **kwargs):
         
         serializer = UserApplySerializer(data=request.data)
@@ -96,7 +118,18 @@ class UserApplyCreateAPIView(APIView):
 
 
 class ProfileListAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsOwner,)
+
+    @swagger_auto_schema(
+        operation_description="This endpoint provides the User Profile and can only be accessed if and only if the request user tries to access their own object.",
+        responses={
+            200: openapi.Response('Success!'),
+            400: 'Bad Request',
+            401: "Unauthorized: You must be authenticated to access the endpoint.",
+            403: "Forbidden: You must be an OWNER User to access."
+        }
+    )
+
 
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -114,10 +147,20 @@ class ProfileListAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-
 class ProfileUpdateAPIView(generics.UpdateAPIView):
     serializer_class = ProfileSerializer
     permission_classes = (IsAuthenticated,)
+
+    @swagger_auto_schema(
+        operation_description="This endpoint updates the User Profile and can only be accessed if and only if the request user tries to access their own object.",
+        responses={
+            200: openapi.Response('Success!'),
+            400: 'Bad Request',
+            401: "Unauthorized: You must be authenticated to access the endpoint.",
+            403: "Forbidden: You must be an OWNER User to access."
+        }
+    )
+
 
     def patch(self, request, *args, **kwargs):
         profile = get_object_or_404(Profile, user=request.user)
@@ -371,7 +414,6 @@ class ProfileRejectAPIView(APIView):
             status=status.HTTP_200_OK
         )
 
-
 class ProfileAllAPIView(generics.ListAPIView):
     queryset = Profile.objects.all()
     serializer_class = ProfileListSerializer
@@ -379,3 +421,17 @@ class ProfileAllAPIView(generics.ListAPIView):
     filter_backends = (SearchFilter, DjangoFilterBackend,)
     search_list = ('profile__user__name',)
     filterset_fields = ('gender', 'status')
+
+
+    @swagger_auto_schema(
+        operation_description="This endpoint lists all the User Profile and can only be accessed by the ADMIN user.",
+        responses={
+            200: openapi.Response('Success!'),
+            400: 'Bad Request',
+            401: "Unauthorized: You must be authenticated to access the endpoint.",
+            403: "Forbidden: You must be an ADMIN User to access."
+        }
+    )
+
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
