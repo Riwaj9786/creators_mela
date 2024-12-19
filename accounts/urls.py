@@ -12,6 +12,7 @@ urlpatterns = [
 
     path('user/apply/', views.UserApplyCreateAPIView.as_view(), name='user_apply'),
     path('user/update/', views.UserUpdateAPIView.as_view(), name='update_user'),
+    path('user/types/', views.UserTypeListAPIView.as_view(), name='user_type'),
 
     path('profile/', views.ProfileListAPIView.as_view(), name='get_profile'),
     path('profile/edit/', views.ProfileUpdateAPIView.as_view(), name='edit_profile'),

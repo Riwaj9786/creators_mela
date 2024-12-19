@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.http import HttpRequest
 from accounts.models import AppUser, Profile, SocialMediaLinks, UserType
 
 # Register your models here.
@@ -18,17 +19,27 @@ class SocialMediaInline(admin.TabularInline):
     fields = ('platform', 'url')
     can_delete = False
 
-    
-# admin.site.register(Profile)
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'user__name', 'gender', 'status')
-    list_display_links = ('user', 'user__name', 'gender')
+    list_display = ('user', 'user__name', 'gender', 'user_type', 'status')
+    list_display_links = ('user', 'user__name', 'user_type', 'gender')
     list_filter = ('gender', 'status', 'user_type')
     list_editable = ('status',)
     readonly_fields = ('user', 'profile_picture', 'phone', 'date_of_birth', 'bio', 'province', 'district', 'municipality', 'gender', 'interest', 'slug', 'created_at', 'heard_from')
     inlines = (SocialMediaInline,)
 
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
 
-admin.site.register(UserType)
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
+
+
+@admin.register(UserType)
+class UserTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description')
+    list_display_links = ('name', 'description')

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from accounts.models import AppUser, Profile, SocialMediaLinks
+from accounts.models import AppUser, Profile, SocialMediaLinks, UserType
 
 from django.contrib.auth import authenticate
 from django.core.validators import validate_email 
@@ -12,6 +12,10 @@ class UserNameUpdateSerializer(serializers.ModelSerializer):
         model = AppUser
         fields = ('name',)
 
+class UserTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserType
+        fields = ('name',)
 
 class UserApplySerializer(serializers.ModelSerializer):
     class Meta:
@@ -32,6 +36,16 @@ class ProfileListSerializer(serializers.ModelSerializer):
         fields = ('user', 'age', 'gender', 'status',)
 
 
+class SpeakerTeamSerializer(serializers.ModelSerializer):
+    user = UserApplySerializer(read_only=True)
+
+    class Meta:
+        model = Profile
+        fields = (
+            'user',
+            'created_at',
+        )
+
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserApplySerializer(read_only=True)
     province = serializers.PrimaryKeyRelatedField(
@@ -51,6 +65,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = (
+            'created_at',
             'user',
             'profile_picture',
             'phone',
@@ -61,7 +76,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             'municipality',
             'status',
             'profile_social_media_links',
-            'slug',
+            'interest',
         )
 
 

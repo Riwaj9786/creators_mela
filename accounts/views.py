@@ -7,6 +7,7 @@ from accounts.models import (
     AppUser,
     Profile,
     SocialMediaLinks,
+    UserType
 )
 
 from accounts.serializers import (
@@ -16,7 +17,8 @@ from accounts.serializers import (
     ProfileSerializer,
     LoginSerializer,
     SocialMediaSerializer,
-    ChangePasswordSerializer
+    ChangePasswordSerializer,
+    UserTypeSerializer,
 )
 
 from rest_framework import generics
@@ -28,8 +30,6 @@ from rest_framework.filters import SearchFilter
 
 from django_filters.rest_framework import DjangoFilterBackend
 
-from django.core.mail import send_mail
-from django.conf import settings
 from django.contrib.auth import login
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
@@ -45,6 +45,14 @@ from drf_yasg import openapi
 from knox import views as knox_views
 
 # Create your views here.
+class UserTypeListAPIView(generics.ListAPIView):
+    queryset = UserType.objects.all()
+    serializer_class = UserTypeSerializer
+    permission_classes = (AllowAny,)
+    filter_backends = (SearchFilter,)
+    search_fields = ('name',)
+
+
 class UserUpdateAPIView(APIView):
     permission_classes = (IsOwner,)
 
@@ -73,7 +81,7 @@ class UserUpdateAPIView(APIView):
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
 
 class UserApplyCreateAPIView(APIView):
 
@@ -105,6 +113,14 @@ class UserApplyCreateAPIView(APIView):
                     is_active = True
                 )
 
+                user_type, created = UserType.objects.get_or_create(name="Guest")
+
+                # Create the Profile and assign the user_type as 'Guests'
+                profile, created = Profile.objects.get_or_create(
+                    user=user,
+                    defaults={'user_type': user_type}
+                )
+
                 return Response(
                     {
                         'message': f'User Created Successfully! The default password is password123',
@@ -114,7 +130,7 @@ class UserApplyCreateAPIView(APIView):
                 )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
 
 
 class ProfileListAPIView(APIView):
@@ -197,6 +213,8 @@ class LoginAPIView(knox_views.LoginView):
 
 
 class SocialMediaLinkAPIView(APIView):
+    permission_classes = (IsAuthenticated,)
+
     def get(self, request, *args, **kwargs):
         profile = get_object_or_404(Profile, user=request.user)
         social_media = SocialMediaLinks.objects.filter(profile=profile)

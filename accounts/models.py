@@ -3,7 +3,7 @@ import os
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 from django.utils.text import slugify
@@ -70,39 +70,39 @@ class AppUser(AbstractBaseUser, PermissionsMixin):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs) 
 
-        if hasattr(self, 'profile'):
-            base_slug = slugify(self.name)
-            slug = base_slug
-            count = 1
 
-            # Ensure the slug is unique
-            while Profile.objects.filter(slug=slug).exists():
-                slug = f"{base_slug}-{count}"
-                count += 1
-
-            return slug
-
-        super().save(*args, **kwargs)
-        
-    
     def __str__(self):
         return f'{self.email}'
-    
+
+
     def has_perm(self, perm, obj=None):
         """Check if the user has a specific permission."""
         return True
 
+
     def has_module_perms(self, app_label):
         """Check if the user has permissions to access the specified app."""
         return True
-    
+
 
 class BaseModel(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True
+
+
+def slug_profile(slug):
+    base_slug = slugify(slug) # type: ignore
+    slug = base_slug
+    count = 1
+
+    while Profile.objects.filter(slug=slug).exists():
+        slug = f"{base_slug}-{count}"
+        count += 1
+
+    return slug
 
 
 @receiver(post_save, sender=get_user_model())
@@ -110,7 +110,7 @@ def create_user_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(
             user = instance,
-            slug = slugify(instance.name)
+            slug = slug_profile(instance.name)
         )
 
 
@@ -121,6 +121,12 @@ def profile_pic_upload_to(instance, filename):
 
 class UserType(models.Model):
     name = models.CharField(max_length=155)
+    description = models.TextField(null=True, blank=True)
+
+
+    def save(self, *args, **kwargs):
+        self.name = self.name.lower()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -156,7 +162,7 @@ class Profile(BaseModel):
             null=True,
             blank=True
         )
-    
+
     phone = models.CharField(max_length=15, blank=True, null=True)
     date_of_birth = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=55, choices=GENDER_CHOICES, null=True, blank = True)
@@ -186,6 +192,15 @@ class Profile(BaseModel):
 
 
     def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.user.name) # type: ignore
+            count = 1
+
+            while Profile.objects.filter(slug=base_slug).exists():
+                slug = f"{base_slug}-{count}"
+                count += 1
+
+            self.slug = slug
         super().save(*args, **kwargs)
 
 
@@ -197,7 +212,7 @@ class Profile(BaseModel):
     def age(self):
         today = timezone.now().date()
 
-        age = today.year - self.date_of_birth.year - ((today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day))
+        age = today.year - self.date_of_birth.year - ((today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day)) # type: ignore
         return age
 
 
