@@ -75,7 +75,7 @@ class SessionCreateAPIView(APIView):
 
 class SessionInEventAPIView(generics.ListAPIView):
     serializer_class = SessionListSerializer
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
         slug = self.kwargs.get('slug')
@@ -184,7 +184,7 @@ class SessionRetrieveUpdateDestroyAPIView(APIView):
 
 
 class OngoingSessionListAPIView(APIView):
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
         ongoing_sessions = Session.objects.filter(

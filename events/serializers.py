@@ -102,7 +102,6 @@ class SessionSerializer(serializers.ModelSerializer):
         return instance
 
 
-
 class SessionListSerializer(serializers.ModelSerializer):
     speakers = SpeakerNameSerializer(read_only = True, many=True)
     attendees = AttendeeProfilePicSerializer(read_only=True, many=True)
@@ -110,7 +109,7 @@ class SessionListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session
         fields = (
-            'id', 'session_name',
+            'id', 'session_name', 'banner', 'description',
             'start_time', 'end_time', 'hall',
             'speakers', 'attendees'
         )
@@ -148,10 +147,11 @@ class OngoingSessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session
         fields = (
-            'id', 'session_name', 'banner', 'description',
+            'id', 'session_name',
             'total_seats', 'start_time', 'end_time', 'hall',
             'speakers', 'attendees', 'slug'
         )
+        read_only_fields = ('slug',)
 
 
 class EventSerializer(serializers.ModelSerializer):

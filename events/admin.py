@@ -29,7 +29,7 @@ class HallAdmin(admin.ModelAdmin):
 
 @admin.register(RegisteredSession)
 class RegisteredSessionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'session', 'registered_date')
-    list_display_links = ('user', 'session', 'registered_date')
+    list_display = ('user', 'session', 'created_at')
+    list_display_links = ('user', 'session', 'created_at')
     search_fields = ('user',)
     readonly_fields = ('user', 'session')

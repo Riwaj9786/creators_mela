@@ -5,13 +5,15 @@ from django.utils.text import slugify
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator, MinValueValidator
 
+from accounts.models import BaseModel
+
 # Create your models here.
 def session_banner_upload_to(instance, filename):
     session_id = instance.id
     return os.path.join('sessions/banner/', f"session_{session_id}", filename)
 
-    
-class Event(models.Model):
+
+class Event(BaseModel):
     name = models.CharField(max_length=150)
     venue = models.CharField(max_length=150, null=True)
     place = models.CharField(max_length=55, default="Kathmandu")
@@ -120,14 +122,13 @@ class Session(models.Model):
 
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.session_name)
+        self.slug = slugify(self.session_name)
 
         original_slug = self.slug
         counter = 1
 
         while Session.objects.filter(slug=self.slug).exists():
-            self.slug = f"{original_slug}_{counter}"
+            self.slug = f"{original_slug}-{counter}"
             counter += 1
 
         super(Session, self).save(*args, **kwargs)       
@@ -142,9 +143,9 @@ class Session(models.Model):
 
     def __str__(self):
         return self.session_name
-    
 
-class RegisteredSession(models.Model):
+
+class RegisteredSession(BaseModel):
     user = models.ForeignKey(
         'accounts.Profile',
         on_delete=models.PROTECT,
@@ -155,10 +156,10 @@ class RegisteredSession(models.Model):
         on_delete=models.PROTECT,
         related_name='session_users'
     )
-    registered_date = models.DateTimeField(auto_now_add=True)
-
     class Meta:
         unique_together = ('user', 'session')
 
     def __str__(self):
         return f"{self.user}_{self.session}"
+    
+
