@@ -39,6 +39,7 @@ LOCAL_APPS = [
     'users',
     'contact',
     'analytics',
+    'feedback'
 ]
 
 THIRD_PARTY_APPS = [
