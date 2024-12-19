@@ -168,7 +168,7 @@ class UserAgeAnalyticsAPIView(APIView):
 
 
     def age_group_counts(self):
-        today = timezone.now().date()
+        today = timezone.now.date()
         profiles = Profile.objects.values('date_of_birth')
         ages = []
 
