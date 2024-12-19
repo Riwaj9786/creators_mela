@@ -1,10 +1,13 @@
 from django.urls import path
 from users import views
 
+app_name = 'users'
+
 urlpatterns = [
     path('guests/', views.GuestsListAPIView.as_view(), name='guest_list'),
     path('speakers/', views.SpeakerListAPIView.as_view(), name='speaker_list'),
-    path('speakers/invite/', views.SpeakerInviteAPIView.as_view(), name='invite_speaker'),
+    path('<str:user_type>/invite/', views.UserInviteAPIView.as_view(), name='invite_user'),
+    path('<str:user_type>/invited/create/', views.UserApplyCreateAPIView.as_view(), name='user_apply'),
     
     path('team/', views.TeamListAPIView.as_view(), name='team-list'),
 

@@ -1,5 +1,5 @@
-from accounts.models import Profile
-from accounts.serializers import ProfileSerializer, InviteSerializer
+from accounts.models import Profile, AppUser, UserType
+from accounts.serializers import ProfileSerializer, InviteSerializer, SpeakerTeamSerializer, UserApplySerializer
 
 from events.models import Session, RegisteredSession
 
@@ -9,7 +9,7 @@ from creators_mela.base_permissions import IsAdminOrSessionOwner
 
 from rest_framework import generics
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status 
@@ -32,50 +32,104 @@ class GuestsListAPIView(generics.ListAPIView):
 
 class SpeakerListAPIView(generics.ListAPIView):
     queryset = Profile.objects.filter(user_type__name="Speaker")
-    serializer_class = ProfileSerializer
+    serializer_class = SpeakerTeamSerializer
     filter_backends = (SearchFilter, DjangoFilterBackend)
     search_fields = ('user__name', 'user__email')
     filterset_fields = ('gender', 'province__name', 'district__name',)
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAdminUser,)
 
     
 class TeamListAPIView(generics.ListAPIView):
     queryset = Profile.objects.filter(user_type__name="Team")
-    serializer_class = ProfileSerializer
+    serializer_class = SpeakerTeamSerializer
     filter_backends = (SearchFilter, DjangoFilterBackend)
     search_fields = ('user__name', 'user__email')
     filterset_fields = ('gender', 'province__name', 'district__name',)
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAdminUser,)
 
 
-class SpeakerInviteAPIView(APIView):
+class UserInviteAPIView(APIView):
     permission_classes = (IsAdminUser,)
 
     def post(self, request, *args, **kwargs):
         serializer = InviteSerializer(data=request.data)
+
         if serializer.is_valid():
+            user_type = kwargs.get('user_type')
+
             emails = serializer.validated_data['email'] # type: ignore
-            url = reverse('accounts:user_apply')
+            url = reverse('users:user_apply', kwargs={'user_type': user_type})
+            print(url)
             invitation_link = f"{request.scheme}://{request.get_host()}{url}"
 
-            subject = "You are Invited!"
-            message = f"You can apply for the Creators' Mela with the provided link: \n {invitation_link}"
+            subject = "You are invited!"
+            message = f"You can apply for the Creators' Mela with the provided link: \n {invitation_link}" 
 
             from_mail = settings.DEFAULT_FROM_EMAIL
+            results = []
 
             for email in emails:
-                send_mail(subject, message, from_mail, [email], fail_silently=False)
-                
+                if AppUser.objects.filter(email=email).exists():
+                    results.append(
+                        f"User with email {email} already exists! Change the status of the already existing user."
+                    )
+                else:
+                    send_mail(subject, message, from_mail, [email], fail_silently=False)
+                    results.append(f"Invitation sent successfully to {email}.")
+
             return Response(
                 {
-                    'message': 'Invitation sent successfully!',
+                    'message': results,
                     'link': invitation_link
                 },
                 status=status.HTTP_200_OK
             )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+
+class UserApplyCreateAPIView(APIView):
+
+    def post(self, request, *args, **kwargs):
+        serializer = UserApplySerializer(data=request.data)
+
+        if serializer.is_valid():
+            user_type_url = kwargs.get('user_type')
+
+            email = serializer.validated_data.get('email')
+            name = serializer.validated_data.get('name')
+
+            if AppUser.objects.filter(email=email).exists():
+                return Response(
+                    {'message': "User with the email already exists!"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            else:
+                user = AppUser.objects.create_user(
+                    email = email,
+                    name = name,
+                    password = 'password123',
+                    is_active = True
+                )
+
+                user_type, created = UserType.objects.get_or_create(name=user_type_url)
+
+                profile, created = Profile.objects.get_or_create(
+                    user = user,
+                    defaults= {'user_type': user_type}
+                )
+
+                return Response(
+                    {'message': f"{user_type} User created successfully!"},
+                    status=status.HTTP_201_CREATED
+                )
+            
+        else:
+            return Response(
+                {'errors': serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 class AboutProfileAPIView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -99,6 +153,7 @@ class AboutProfileAPIView(APIView):
 
 class RegisterSessionAPIView(APIView):
     permission_classes = (IsAuthenticated,)
+    
     def post(self, request, slug, *args, **kwargs):
         try:
             session = Session.objects.get(slug=slug)
