@@ -43,158 +43,11 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 from knox import views as knox_views
-
-# Create your views here.
-class UserTypeListAPIView(generics.ListAPIView):
-    queryset = UserType.objects.all()
-    serializer_class = UserTypeSerializer
-    permission_classes = (AllowAny,)
-    filter_backends = (SearchFilter,)
-    search_fields = ('name',)
+from knox.models import AuthToken
 
 
-class UserUpdateAPIView(APIView):
-    permission_classes = (IsOwner,)
-
-    @swagger_auto_schema(
-        operation_description="This endpoint updates the User Profile and can only be accessed if and only if the request user tries to access their own object.",
-        responses={
-            200: openapi.Response('Success!'),
-            400: 'Bad Request',
-            401: "Unauthorized: You must be authenticated to access the endpoint.",
-            403: "Forbidden: You must be an OWNER User to access."
-        }
-    )
-
-    def patch(self, request, *args, **kwargs):
-        user = request.user
-        serializer = UserNameUpdateSerializer(user, data=request.data)
-        
-        if serializer.is_valid():
-            serializer.save()
-            return Response(
-                {
-                    'message': 'User Updated Successfully!',
-                    'data': serializer.data
-                },
-                status=status.HTTP_200_OK
-            )
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class UserApplyCreateAPIView(APIView):
-
-    @swagger_auto_schema(
-        operation_description="This endpoint creates post request for new users to apply. This endpoint is accessible to all the Users!",
-        responses={
-            200: openapi.Response('Success! Your default password is \'password123\''),
-            400: 'Bad Request',
-        }
-    )
-
-    def post(self, request, *args, **kwargs):
-        
-        serializer = UserApplySerializer(data=request.data)
-        if serializer.is_valid():
-            email = serializer.validated_data.get('email')
-            name = serializer.validated_data.get('name')
-
-            if AppUser.objects.filter(email=email).exists():
-                return Response(
-                    {'message': 'User with Email already exists!'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            else:
-                user = AppUser.objects.create_user(
-                    email = email,
-                    name = name,
-                    password = "password123",
-                    is_active = True
-                )
-
-                user_type, created = UserType.objects.get_or_create(name="Guest")
-
-                # Create the Profile and assign the user_type as 'Guests'
-                profile, created = Profile.objects.get_or_create(
-                    user=user,
-                    defaults={'user_type': user_type}
-                )
-
-                return Response(
-                    {
-                        'message': f'User Created Successfully! The default password is password123',
-                        'data': serializer.data
-                    },
-                    status=status.HTTP_201_CREATED
-                )
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-class ProfileListAPIView(APIView):
-    permission_classes = (IsOwner,)
-
-    @swagger_auto_schema(
-        operation_description="This endpoint provides the User Profile and can only be accessed if and only if the request user tries to access their own object.",
-        responses={
-            200: openapi.Response('Success!'),
-            400: 'Bad Request',
-            401: "Unauthorized: You must be authenticated to access the endpoint.",
-            403: "Forbidden: You must be an OWNER User to access."
-        }
-    )
-
-
-    def get(self, request, *args, **kwargs):
-        user = request.user
-        
-        try:
-            profile = Profile.objects.get(user=user)
-        except Profile.DoesNotExist:
-            return Response(
-                {
-                    'message': "Profile doesn't exist!"
-                }, status=status.HTTP_404_NOT_FOUND
-            )
-        
-        serializer = ProfileSerializer(profile)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class ProfileUpdateAPIView(generics.UpdateAPIView):
-    serializer_class = ProfileSerializer
-    permission_classes = (IsAuthenticated,)
-
-    @swagger_auto_schema(
-        operation_description="This endpoint updates the User Profile and can only be accessed if and only if the request user tries to access their own object.",
-        responses={
-            200: openapi.Response('Success!'),
-            400: 'Bad Request',
-            401: "Unauthorized: You must be authenticated to access the endpoint.",
-            403: "Forbidden: You must be an OWNER User to access."
-        }
-    )
-
-
-    def patch(self, request, *args, **kwargs):
-        profile = get_object_or_404(Profile, user=request.user)
-
-        serializer = self.get_serializer(profile, data=request.data, partial=True)
-
-        if serializer.is_valid():
-            serializer.save()  
-
-            return Response(
-                {
-                    'message': 'Profile Updated Successfully!',
-                    'data': serializer.data
-                },
-                status=status.HTTP_200_OK
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+# AUTHENTICATION AND PASSWORD VALIDATION 
+###################################################
 
 class LoginAPIView(knox_views.LoginView):
     permission_classes = (AllowAny,)
@@ -210,35 +63,8 @@ class LoginAPIView(knox_views.LoginView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(response.data, status=status.HTTP_200_OK)
+    
 
-
-class SocialMediaLinkAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def get(self, request, *args, **kwargs):
-        profile = get_object_or_404(Profile, user=request.user)
-        social_media = SocialMediaLinks.objects.filter(profile=profile)
-
-        serializer = SocialMediaSerializer(social_media, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-        
-
-    def post(self, request, *args, **kwargs):
-        profile = get_object_or_404(Profile, user=request.user)
-        serializer = SocialMediaSerializer(data=request.data)
-
-        if serializer.is_valid():
-            serializer.save(profile=profile)
-            return Response(
-                {
-                    'message': 'Social Media Link added successfully!',
-                    'data': serializer.data
-                },
-                status=status.HTTP_201_CREATED
-            )
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
 
 class ResetPasswordRequestAPIView(APIView):
     permission_classes = (AllowAny,)
@@ -370,7 +196,7 @@ class ChangePasswordAPIView(APIView):
 
         if serializer.is_valid(raise_exception=True):
             user = request.user
-            new_password = serializer.validated_data['new_password']
+            new_password = serializer.validated_data.get('new_password')
 
             user.set_password(new_password)
             user.save()
@@ -381,7 +207,165 @@ class ChangePasswordAPIView(APIView):
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 
+
+############### 1. USER APPLY
+############################################
+
+@swagger_auto_schema(
+    operation_description="This endpoint creates post request for new users to apply. This endpoint is accessible to all the Users!",
+    responses={
+        200: openapi.Response('Success! Your default password is \'password123\''),
+        400: 'Bad Request',
+    }
+)
+class UserApplyCreateAPIView(APIView):
+
+    def post(self, request, *args, **kwargs):
+        
+        serializer = UserApplySerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data.get('email')
+            name = serializer.validated_data.get('name')
+
+            if AppUser.objects.filter(email=email).exists():
+                return Response(
+                    {'message': 'User with Email already exists!'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            else:
+                user_type, created = UserType.objects.get_or_create(name="attendee")
+                user = AppUser.objects.create_user(
+                    email = email,
+                    name = name,
+                    password = "password123",
+                    user_type = user_type,
+                    is_active = True
+                )
+
+                login(request, user)
+                auth_token = AuthToken.objects.create(user)[1]
+
+                return Response(
+                    {
+                        'message': f'User Created Successfully! The default password is password123',
+                        'data': serializer.data,
+                        'token': auth_token
+                    },
+                    status=status.HTTP_201_CREATED
+                )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+############### 2. PROFILE UPDATE
+############################################
+
+@swagger_auto_schema(
+    operation_description="This endpoint updates the User Profile and can only be accessed if and only if the request user tries to access their own object.",
+    responses={
+        200: openapi.Response('Success!'),
+        400: 'Bad Request',
+        401: "Unauthorized: You must be authenticated to access the endpoint.",
+        403: "Forbidden: You must be an OWNER User to access."
+    }
+)
+class ProfileUpdateAPIView(generics.UpdateAPIView):
+    serializer_class = ProfileSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def patch(self, request, *args, **kwargs):
+        user = request.user
+        profile = get_object_or_404(Profile, user=user)
+
+        serializer = self.get_serializer(profile, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()  
+
+
+            return Response(
+                {
+                    'message': 'Profile Updated Successfully!',
+                    'data': serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+
+# 3. ENDPOINT TO ADD SOCIAL MEDIA LINKS OF THE USER
+############################################
+
+class SocialMediaLinkAPIView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        profile = get_object_or_404(Profile, user=request.user)
+        social_media = SocialMediaLinks.objects.filter(profile=profile)
+
+        serializer = SocialMediaSerializer(social_media, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+
+    def post(self, request, *args, **kwargs):
+        profile = get_object_or_404(Profile, user=request.user)
+        serializer = SocialMediaSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save(profile=profile)
+            return Response(
+                {
+                    'message': 'Social Media Link added successfully!',
+                    'data': serializer.data
+                },
+                status=status.HTTP_201_CREATED
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+# 4. PROFILE DETAIL VIEW (REQUESTED USER)
+############################################
+
+@swagger_auto_schema(
+    operation_description="This endpoint provides the User Profile and can only be accessed if and only if the request user tries to access their own object.",
+    responses={
+        200: openapi.Response('Success!'),
+        400: 'Bad Request',
+        401: "Unauthorized: You must be authenticated to access the endpoint.",
+        403: "Forbidden: You must be an OWNER User to access."
+    }
+)
+class ProfileListAPIView(APIView):
+    permission_classes = (IsOwner,)
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        
+        try:
+            profile = Profile.objects.get(user=user)
+        except Profile.DoesNotExist:
+            return Response(
+                {
+                    'message': "Profile doesn't exist!"
+                }, status=status.HTTP_404_NOT_FOUND
+            )
+        
+        serializer = ProfileSerializer(profile)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        
+
+
+################# APPROVE AND REJECT ########################
+############################################
 
 class ProfileApproveAPIView(APIView):
     permission_classes = (IsAdminUser,)
@@ -432,24 +416,22 @@ class ProfileRejectAPIView(APIView):
             status=status.HTTP_200_OK
         )
 
+
+
+@swagger_auto_schema(
+    operation_description="This endpoint lists all the User Profile and can only be accessed by the ADMIN user.",
+    responses={
+        200: openapi.Response('Success!'),
+        400: 'Bad Request',
+        401: "Unauthorized: You must be authenticated to access the endpoint.",
+        403: "Forbidden: You must be an ADMIN User to access."
+    }
+)
+# Admin User can view and approve or reject the status of Attendees.
 class ProfileAllAPIView(generics.ListAPIView):
-    queryset = Profile.objects.all()
+    queryset = Profile.objects.filter(user__user_type__name  = "attendee")
     serializer_class = ProfileListSerializer
     permission_classes = (IsAdminUser,)
     filter_backends = (SearchFilter, DjangoFilterBackend,)
     search_list = ('profile__user__name',)
     filterset_fields = ('gender', 'status')
-
-
-    @swagger_auto_schema(
-        operation_description="This endpoint lists all the User Profile and can only be accessed by the ADMIN user.",
-        responses={
-            200: openapi.Response('Success!'),
-            400: 'Bad Request',
-            401: "Unauthorized: You must be authenticated to access the endpoint.",
-            403: "Forbidden: You must be an ADMIN User to access."
-        }
-    )
-
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)

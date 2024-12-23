@@ -1,21 +1,29 @@
 from rest_framework import serializers
 
-from accounts.models import AppUser, Profile, SocialMediaLinks, UserType
+from accounts.models import AppUser, Profile, SocialMediaLinks, UserType, Platform
+
+from federal.serializers import ProvinceNameSerializer, DistrictNameSerializer, MunicipalityNameSerializer
 
 from django.contrib.auth import authenticate
 from django.core.validators import validate_email 
+from django.utils import timezone
 
-from federal.models import Province, District, Municipality
+
+
+# SERIALIZERS FOR USER MODEL
+############################################
 
 class UserNameUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppUser
         fields = ('name',)
 
+
 class UserTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserType
         fields = ('name',)
+
 
 class UserApplySerializer(serializers.ModelSerializer):
     class Meta:
@@ -23,7 +31,21 @@ class UserApplySerializer(serializers.ModelSerializer):
         fields = ('email', 'name')
 
 
+class UserSerializer(serializers.ModelSerializer):
+    user_type = UserTypeSerializer(read_only=True)
+    class Meta:
+        model = AppUser
+        fields = ('name', 'user_type')
+
+
+class PlatformNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Platform
+        fields = ('platform_name',)
+
+
 class SocialMediaSerializer(serializers.ModelSerializer):
+    platform = PlatformNameSerializer(read_only=True)
     class Meta:
         model = SocialMediaLinks
         fields = ('platform', 'url')
@@ -31,9 +53,27 @@ class SocialMediaSerializer(serializers.ModelSerializer):
 
 class ProfileListSerializer(serializers.ModelSerializer):
     user = UserApplySerializer(read_only=True)
+    province = ProvinceNameSerializer()
+    district = DistrictNameSerializer()
+    municipality = MunicipalityNameSerializer()
+    profile_social_media_links = SocialMediaSerializer(many=True, read_only=True)
+
     class Meta:
         model = Profile
-        fields = ('user', 'age', 'gender', 'status',)
+        fields = (
+            'created_at',
+            'user',
+            'profile_social_media_links',
+            'phone',
+            'age',
+            'gender',
+            'municipality',
+            'district',
+            'province',
+            'status',
+            'slug'
+        )
+
 
 
 class SpeakerTeamSerializer(serializers.ModelSerializer):
@@ -47,37 +87,33 @@ class SpeakerTeamSerializer(serializers.ModelSerializer):
         )
 
 class ProfileSerializer(serializers.ModelSerializer):
-    user = UserApplySerializer(read_only=True)
-    province = serializers.PrimaryKeyRelatedField(
-        queryset = Province.objects.all(),
-        required = False
-    )
-    district = serializers.PrimaryKeyRelatedField(
-        queryset = District.objects.all(),
-        required=False
-    )
-    municipality = serializers.PrimaryKeyRelatedField(
-        queryset = Municipality.objects.all(),
-        required = False
-    )
+    user = UserSerializer(read_only=True)
+    province = ProvinceNameSerializer()
+    district = DistrictNameSerializer()
+    municipality = MunicipalityNameSerializer()
     profile_social_media_links = SocialMediaSerializer(many=True, read_only=True)
 
     class Meta:
         model = Profile
         fields = (
-            'created_at',
             'user',
             'profile_picture',
-            'phone',
-            'date_of_birth',
+            'bio',
+            'age',
             'gender',
             'province',
             'district',
             'municipality',
-            'status',
             'profile_social_media_links',
             'interest',
+            'heard_from'
         )
+
+    def get_age(self, obj):
+        if obj.date_of_birth:
+            today = timezone.now().today()
+            age = today.year - obj.date_of_birth.year - ((today.month, today.day) < (obj.date_of_birth.month, obj.date_of_birth.day))
+            return age
 
 
 class LoginSerializer(serializers.Serializer):
