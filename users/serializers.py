@@ -1,11 +1,26 @@
 from rest_framework import serializers
 
 from accounts.models import Profile
-from accounts.serializers import UserApplySerializer
+from accounts.serializers import UserApplySerializer, UserNameUpdateSerializer
 
 from events.models import RegisteredSession
 
 from federal.serializers import ProvinceSerializer, DistrictBriefSerializer
+
+
+# Create your views here.
+class ProfilePicSerializer(serializers.ModelSerializer):
+    user = UserNameUpdateSerializer(read_only=True)
+    class Meta:
+        model = Profile
+        fields = ('user', 'profile_picture', 'is_international')
+
+
+class TeamListSerializer(serializers.ModelSerializer):
+    user = UserApplySerializer(read_only=True)
+    class Meta:
+        model = Profile
+        fields = ('user', 'created_at')
 
 
 class RegisteredSessionSerializer(serializers.ModelSerializer):

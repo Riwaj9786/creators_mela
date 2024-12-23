@@ -6,7 +6,7 @@ class Command(BaseCommand):
     help = "Fetch province, district, and municipality data from an API and populate the database"
 
     def handle(self, *args, **kwargs):
-        try:     
+        try:
 
             # Fetch Provinces
             province_url = 'https://bipadportal.gov.np/api/v1/province/'

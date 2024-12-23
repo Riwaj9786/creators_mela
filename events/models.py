@@ -12,47 +12,17 @@ def session_banner_upload_to(instance, filename):
     session_id = instance.id
     return os.path.join('sessions/banner/', f"session_{session_id}", filename)
 
-
-class Event(BaseModel):
-    name = models.CharField(max_length=150)
-    venue = models.CharField(max_length=150, null=True)
-    place = models.CharField(max_length=55, default="Kathmandu")
-    date = models.DateField()
-    slug = models.SlugField(unique=True, blank=True, null=True)
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
-
-        original_slug = self.slug
-        counter = 1
-
-        while Event.objects.filter(slug=self.slug).exists():
-            self.slug = f"{original_slug}_{counter}"
-            counter += 1
-
-        super().save(*args, **kwargs)
-
-
-    def __str__(self):
-        return f"{self.name}"
     
     
 class Hall(models.Model):
     hall_name = models.CharField(max_length=255)
-    event = models.ForeignKey(
-        Event,
-        on_delete=models.CASCADE,
-        related_name='event_hall',
-        null=True, blank=True
-    )
 
     def __str__(self):
         return self.hall_name
 
 
+
 class Session(models.Model):
-    event = models.ForeignKey(Event, on_delete=models.PROTECT, related_name='sessions')
     session_name = models.CharField(max_length=500)
     
     banner = models.ImageField(upload_to=session_banner_upload_to, validators=[FileExtensionValidator(allowed_extensions={'jpg', 'png', 'jpeg'})], null=True, blank=True)
@@ -60,12 +30,14 @@ class Session(models.Model):
 
     total_seats = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
     
+    date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
+
     hall = models.ForeignKey(
         Hall,
         on_delete=models.PROTECT,
-        related_name='session_in_hall'
+        related_name='hall'
     )
     slug = models.SlugField(unique=True, null=True, blank=True)
 
@@ -156,6 +128,7 @@ class RegisteredSession(BaseModel):
         on_delete=models.PROTECT,
         related_name='session_users'
     )
+    
     class Meta:
         unique_together = ('user', 'session')
 

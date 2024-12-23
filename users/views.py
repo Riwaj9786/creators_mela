@@ -1,9 +1,15 @@
 from accounts.models import Profile, AppUser, UserType
-from accounts.serializers import ProfileSerializer, InviteSerializer, SpeakerTeamSerializer, UserApplySerializer
+from accounts.serializers import ProfileSerializer, InviteSerializer, UserApplySerializer
 
 from events.models import Session, RegisteredSession
 
-from users.serializers import AboutMeSerializers, RegisteredSessionSerializer
+from users.models import InvitedEmail
+from users.serializers import (
+    AboutMeSerializers,
+    RegisteredSessionSerializer,
+    ProfilePicSerializer,
+    TeamListSerializer
+)
 
 from creators_mela.base_permissions import IsAdminOrSessionOwner
 
@@ -20,32 +26,32 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.urls import reverse
 
-# Create your views here.
-class GuestsListAPIView(generics.ListAPIView):
-    queryset = Profile.objects.filter(user_type__name="Guest")
-    serializer_class = ProfileSerializer
-    filter_backends = (SearchFilter, DjangoFilterBackend)
-    search_fields = ('user__name', 'user__email')
-    filterset_fields = ('gender', 'province__name', 'district__name',)
-    permission_classes = (IsAuthenticated,)
+
+class AnonymousUserSpeakerAPIView(generics.ListAPIView):
+    queryset = Profile.objects.filter(user__user_type__name="speaker")
+    serializer_class = ProfilePicSerializer
+    permission_classes = (AllowAny,)
 
 
-class SpeakerListAPIView(generics.ListAPIView):
-    queryset = Profile.objects.filter(user_type__name="Speaker")
-    serializer_class = SpeakerTeamSerializer
+class AnonymousUserPerformerAPIView(generics.ListAPIView):
+    queryset = Profile.objects.filter(user__user_type__name="performer")
+    serializer_class = ProfilePicSerializer
+    permission_classes = (AllowAny,)
+
+
+class AdminListAPIView(generics.ListAPIView):
+    serializer_class = TeamListSerializer
     filter_backends = (SearchFilter, DjangoFilterBackend)
     search_fields = ('user__name', 'user__email')
-    filterset_fields = ('gender', 'province__name', 'district__name',)
     permission_classes = (IsAdminUser,)
 
+    def get_queryset(self):
+        user_type_name = self.kwargs.get('user_type')
+
+        queryset = Profile.objects.filter(user__user_type__name = user_type_name)
+
+        return queryset
     
-class TeamListAPIView(generics.ListAPIView):
-    queryset = Profile.objects.filter(user_type__name="Team")
-    serializer_class = SpeakerTeamSerializer
-    filter_backends = (SearchFilter, DjangoFilterBackend)
-    search_fields = ('user__name', 'user__email')
-    filterset_fields = ('gender', 'province__name', 'district__name',)
-    permission_classes = (IsAdminUser,)
 
 
 class UserInviteAPIView(APIView):
@@ -55,11 +61,11 @@ class UserInviteAPIView(APIView):
         serializer = InviteSerializer(data=request.data)
 
         if serializer.is_valid():
-            user_type = kwargs.get('user_type')
+            user_type_name = kwargs.get('user_type')
+            user_type = UserType.objects.get(name = user_type_name)
 
             emails = serializer.validated_data['email'] # type: ignore
             url = reverse('users:user_apply', kwargs={'user_type': user_type})
-            print(url)
             invitation_link = f"{request.scheme}://{request.get_host()}{url}"
 
             subject = "You are invited!"
@@ -71,9 +77,24 @@ class UserInviteAPIView(APIView):
             for email in emails:
                 if AppUser.objects.filter(email=email).exists():
                     results.append(
-                        f"User with email {email} already exists! Change the status of the already existing user."
+                        f"User with email {email} already exists!"
                     )
                 else:
+                    try:
+                        invited_email = InvitedEmail.objects.get(email = email)
+                        invited_email.user_type = user_type
+                        invited_email.save()
+
+                        results.append(f"User with this email, {email} was already invited! The user_type has now been updated!")
+                    
+                    except InvitedEmail.DoesNotExist:
+                        InvitedEmail.objects.create(
+                            email=email,
+                            user_type=user_type
+                        )
+
+                        results.append("Invitation link has been sent to mail {email}!")
+
                     send_mail(subject, message, from_mail, [email], fail_silently=False)
                     results.append(f"Invitation sent successfully to {email}.")
 
@@ -88,14 +109,23 @@ class UserInviteAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
 class UserApplyCreateAPIView(APIView):
 
     def post(self, request, *args, **kwargs):
         serializer = UserApplySerializer(data=request.data)
 
         if serializer.is_valid():
-            user_type_url = kwargs.get('user_type')
+            user_type_name = kwargs.get('user_type')
 
+            try:
+                user_type = UserType.objects.get(name = user_type_name)
+            except UserType.DoesNotExist:
+                return Response(
+                    {'message': "Invalid User Type!"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
             email = serializer.validated_data.get('email')
             name = serializer.validated_data.get('name')
 
@@ -104,35 +134,43 @@ class UserApplyCreateAPIView(APIView):
                     {'message': "User with the email already exists!"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            else:
-                user = AppUser.objects.create_user(
-                    email = email,
-                    name = name,
-                    password = 'password123',
-                    is_active = True
-                )
-
-                user_type, created = UserType.objects.get_or_create(name=user_type_url)
-
-                profile, created = Profile.objects.get_or_create(
-                    user = user,
-                    defaults= {'user_type': user_type}
-                )
-
+            try:
+                invited_email = InvitedEmail.objects.get(email=email, user_type=user_type)
+            except InvitedEmail.DoesNotExist:
                 return Response(
-                    {'message': f"{user_type} User created successfully!"},
-                    status=status.HTTP_201_CREATED
+                    {'message': "The provided mail and user type combination was not invited!"},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
             
-        else:
-            return Response(
-                {'errors': serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST
+            user = AppUser.objects.create_user(
+                email = email,
+                name = name,
+                password = 'password123',
+                user_type = user_type,
+                is_active = True
             )
+
+            profile, created = Profile.objects.get_or_create(
+                user = user,
+            )
+            if not created:
+                profile.status = "Accepted"
+                profile.save()
+
+            return Response(
+                {'message': f"{user_type} User created successfully!"},
+                status=status.HTTP_201_CREATED
+            )
+        
+        return Response(
+            serializer.errors,
+            status= status.HTTP_400_BAD_REQUEST
+        )
+
 
 
 class AboutProfileAPIView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAdminUser,)
 
     def get(self, request, slug=None, *args, **kwargs):
         try:
@@ -141,7 +179,7 @@ class AboutProfileAPIView(APIView):
             else:
                 profile = Profile.objects.get(user=request.user)
             
-            serializer = AboutMeSerializers(profile)
+            serializer = ProfileSerializer(profile)
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         except Exception as e:

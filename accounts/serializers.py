@@ -75,17 +75,6 @@ class ProfileListSerializer(serializers.ModelSerializer):
         )
 
 
-
-class SpeakerTeamSerializer(serializers.ModelSerializer):
-    user = UserApplySerializer(read_only=True)
-
-    class Meta:
-        model = Profile
-        fields = (
-            'user',
-            'created_at',
-        )
-
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     province = ProvinceNameSerializer()

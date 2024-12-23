@@ -7,6 +7,22 @@ class ProvinceSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'code',)
 
 
+class ProvinceNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Province
+        fields = ('name',)
+
+class DistrictNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = District
+        fields = ('name',)
+
+class MunicipalityNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Municipality
+        fields = ('name',)
+
+
 class DistrictSerializer(serializers.ModelSerializer):
     province = ProvinceSerializer(read_only=True)
     class Meta:

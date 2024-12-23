@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
-from events.models import Event, Hall, Session
+from events.models import Hall, Session
 
 from accounts.models import Profile, AppUser
 
@@ -23,20 +23,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class SessionSerializer(serializers.ModelSerializer):
-    # Many-to-many relationships need to be represented by their IDs
-    moderator = serializers.PrimaryKeyRelatedField(
-        queryset=Profile.objects.all(), many=True, required=False
-    )
-    speakers = serializers.PrimaryKeyRelatedField(
-        queryset=Profile.objects.filter(user_type__name='Speaker', status='Accepted'),
-        many=True,
-        required=False
-    )
-    attendees = serializers.PrimaryKeyRelatedField(
-        queryset=Profile.objects.filter(user_type__name='Guest', status='Accepted'),
-        many=True,
-        required=False
-    )
 
     class Meta:
         model = Session
@@ -126,17 +112,11 @@ class SessionListSerializer(serializers.ModelSerializer):
 
 
 class HallSessionSerializer(serializers.ModelSerializer):
-    session_in_hall = SessionListSerializer(read_only=True, many=True)
+    hall = SessionListSerializer(read_only=True, many=True)
     class Meta:
         model = Hall
-        fields = ('hall_name', 'session_in_hall')
+        fields = ('hall_name', 'hall')
 
-
-class EventDetailSerializer(serializers.ModelSerializer):
-    event_hall = HallSessionSerializer(read_only=True, many=True)
-    class Meta:
-        model = Event
-        fields = ('name', 'date', 'slug', 'event_hall')
 
 
 
@@ -152,13 +132,3 @@ class OngoingSessionSerializer(serializers.ModelSerializer):
             'speakers', 'attendees', 'slug'
         )
         read_only_fields = ('slug',)
-
-
-class EventSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Event
-        fields = (
-            'id', 'name', 'venue', 'place', 'date', 'slug'
-        )
-        read_only_fields = ('id', 'slug')
-
