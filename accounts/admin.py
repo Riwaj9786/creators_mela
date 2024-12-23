@@ -5,9 +5,9 @@ from accounts.models import AppUser, Profile, SocialMediaLinks, UserType, Platfo
 # Register your models here.
 @admin.register(AppUser)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('email', 'name', 'is_active', 'is_staff', 'is_superuser')
-    list_display_links = ('email', 'name')
-    list_filter = ('is_active', 'is_staff', 'is_superuser')
+    list_display = ('email', 'name', 'user_type', 'is_active', 'is_staff', 'is_superuser')
+    list_display_links = ('email', 'name', 'user_type')
+    list_filter = ('user_type', 'is_active', 'is_staff', 'is_superuser')
     search_fields = ('email', 'name')
     readonly_fields = ('email', 'name', 'last_login',)
     exclude = ('otp', 'otp_expiry', 'password')

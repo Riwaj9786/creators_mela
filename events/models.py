@@ -73,7 +73,6 @@ class Session(models.Model):
         
         overlapping_sessions = Session.objects.filter(
             hall=self.hall,
-            event__date = self.event.date,
             start_time__lt = self.end_time,
             end_time__gt = self.start_time
         ).exclude(pk=self.pk)
@@ -84,7 +83,6 @@ class Session(models.Model):
         for speaker in self.speakers.all():
             overlapping_for_speaker = Session.objects.filter(
                 speakers = speaker,
-                event__date = self.event.date,
                 start_time__lte = self.start_time,
                 end_time__gte = self.end_time
             ).exclude(pk=self.pk)

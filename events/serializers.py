@@ -33,15 +33,13 @@ class SessionSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        event = self.context.get('event')
-
         # Handle many-to-many fields separately
         moderator_data = validated_data.pop('moderator', [])
         speakers_data = validated_data.pop('speakers', [])
         attendees_data = validated_data.pop('attendees', [])
 
         # Create the session instance in memory but not in the databse yet
-        session = Session(event=event, **validated_data)
+        session = Session(event=event, **validated_data) #type: ignore
 
         try:
             session.save()
