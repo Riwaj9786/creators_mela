@@ -1,5 +1,5 @@
 from accounts.models import Profile, AppUser
-from events.models import RegisteredSession
+from users.models import RegisteredSession
 
 from collections import Counter
 
