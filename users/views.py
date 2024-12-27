@@ -1,9 +1,9 @@
 from accounts.models import Profile, AppUser, UserType
-from accounts.serializers import ProfileSerializer, InviteSerializer, UserApplySerializer
+from accounts.serializers import ProfileSerializer, ProfileListSerializer, InviteSerializer, UserApplySerializer
 
-from events.models import Session, RegisteredSession
+from events.models import Session
 
-from users.models import InvitedEmail
+from users.models import InvitedEmail, RegisteredSession
 from users.serializers import (
     AboutMeSerializers,
     RegisteredSessionSerializer,
@@ -39,6 +39,14 @@ class AnonymousUserPerformerAPIView(generics.ListAPIView):
     permission_classes = (AllowAny,)
 
 
+class AdminAttendeeListAPIView(generics.ListAPIView):
+    queryset = Profile.objects.filter(user__user_type__name="attendee")
+    serializer_class = ProfileListSerializer
+    filter_backends = (SearchFilter, DjangoFilterBackend)
+    search_fields = ('user__name', 'user__email')
+    permission_classes = (IsAdminUser,)
+
+
 class AdminListAPIView(generics.ListAPIView):
     serializer_class = TeamListSerializer
     filter_backends = (SearchFilter, DjangoFilterBackend)
@@ -64,11 +72,14 @@ class UserInviteAPIView(APIView):
             user_type_name = kwargs.get('user_type')
             user_type = UserType.objects.get(name = user_type_name)
 
+            session_slug = kwargs.get('session_slug')
+            session = Session.objects.get(slug=session_slug)
+
             emails = serializer.validated_data['email'] # type: ignore
-            url = reverse('users:user_apply', kwargs={'user_type': user_type})
+            url = reverse('users:user_apply', kwargs={'user_type': user_type, 'session_slug': session_slug})
             invitation_link = f"{request.scheme}://{request.get_host()}{url}"
 
-            subject = "You are invited!"
+            subject = f"You are invited as {user_type_name} for the session {session.session_name}!"
             message = f"You can apply for the Creators' Mela with the provided link: \n {invitation_link}" 
 
             from_mail = settings.DEFAULT_FROM_EMAIL
@@ -83,6 +94,7 @@ class UserInviteAPIView(APIView):
                     try:
                         invited_email = InvitedEmail.objects.get(email = email)
                         invited_email.user_type = user_type
+                        invited_email.session = session
                         invited_email.save()
 
                         results.append(f"User with this email, {email} was already invited! The user_type has now been updated!")
@@ -117,6 +129,7 @@ class UserApplyCreateAPIView(APIView):
 
         if serializer.is_valid():
             user_type_name = kwargs.get('user_type')
+            session_slug = kwargs.get('session_slug')
 
             try:
                 user_type = UserType.objects.get(name = user_type_name)
@@ -125,6 +138,16 @@ class UserApplyCreateAPIView(APIView):
                     {'message': "Invalid User Type!"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
+            
+
+            try:
+                session = Session.objects.get(slug = session_slug)
+            except Session.DoesNotExist:
+                return Response(
+                    {'message': "Invalid Session!"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
             
             email = serializer.validated_data.get('email')
             name = serializer.validated_data.get('name')
@@ -135,10 +158,10 @@ class UserApplyCreateAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             try:
-                invited_email = InvitedEmail.objects.get(email=email, user_type=user_type)
+                invited_email = InvitedEmail.objects.get(email=email, user_type=user_type, session=session)
             except InvitedEmail.DoesNotExist:
                 return Response(
-                    {'message': "The provided mail and user type combination was not invited!"},
+                    {'message': "The provided mail, user type, and session combination was not invited!"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
@@ -156,6 +179,17 @@ class UserApplyCreateAPIView(APIView):
             if not created:
                 profile.status = "Accepted"
                 profile.save()
+
+            if user_type_name == 'speaker':
+                session.speakers.add(profile)
+
+            elif user_type_name == 'moderator':
+                session.moderator.add(profile)
+
+            elif user_type_name == 'performer':
+                session.performers.add(profile)
+
+            invited_email.delete()
 
             return Response(
                 {'message': f"{user_type} User created successfully!"},
@@ -204,7 +238,6 @@ class RegisterSessionAPIView(APIView):
             )
         
         user = request.user
-        print(user)
 
         try:
             profile = user.profile
@@ -214,7 +247,6 @@ class RegisterSessionAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        print(profile)
         if profile.status != 'Accepted':
             return Response(
                 {'message': "You are not Accepted Profile to be registering in the session."},
@@ -230,11 +262,18 @@ class RegisterSessionAPIView(APIView):
         available_seats = RegisteredSession.objects.filter(session=session).count()
 
         if available_seats <= session.total_seats: # type: ignore
-            registered_session = RegisteredSession.objects.create(session=session, user=profile)
-            session.attendees.add(profile)
+            if user.user_type.name == "attendee":
+                registered_session = RegisteredSession.objects.create(session=session, user=profile)
+                session.attendees.add(profile)
+            else:
+                return Response(
+                    {'message': f"You are already Registered as {user.user_type}"},
+                    status=status.HTTP_200_OK
+                )
         else:
             return Response(
-                {'message': "The Session is already occupied!"}
+                {'message': "The Session is already occupied!"},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
         serializer = RegisteredSessionSerializer(registered_session)
@@ -260,7 +299,7 @@ class UserRegisteredEventAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        registered_sessions = RegisteredSession.objects.filter(user=profile)
+        registered_sessions = RegisteredSession.objects.filter(user=profile, accepted=True)
 
         for session in registered_sessions:
             self.check_object_permissions(request, session)

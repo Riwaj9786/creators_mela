@@ -3,7 +3,7 @@ from rest_framework import serializers
 from accounts.models import Profile
 from accounts.serializers import UserApplySerializer, UserNameUpdateSerializer
 
-from events.models import RegisteredSession
+from users.models import RegisteredSession
 
 from federal.serializers import ProvinceSerializer, DistrictBriefSerializer
 
