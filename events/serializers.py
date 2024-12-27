@@ -43,11 +43,20 @@ class SpeakerNameProfilePicSerializer(serializers.ModelSerializer):
         fields = ('name', 'profile_picture',)
 
 
+
+class AttendeeProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ('profile_picture',)
+
+
+
 class SessionAuthenticatedUserSerializer(serializers.ModelSerializer):
     speakers = SpeakerNameProfilePicSerializer(read_only=True, many=True)
+    attendees = AttendeeProfileSerializer(read_only=True, many=True)
     class Meta:
         model = Session
-        fields = ('session_name', 'start_time', 'end_time', 'speakers', 'slug')
+        fields = ('session_name', 'start_time', 'end_time', 'speakers', 'attendees', 'slug')
 
 
 

@@ -60,14 +60,13 @@ class LoginAPIView(knox_views.LoginView):
             login(request, user)
             is_superuser = user.is_superuser
             response = super().post(request, format=None)
+            response.data['is_superuser'] = is_superuser
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(
-            {
-                'is_superuser': is_superuser,
-                'data': response.data
-            },
+            # 'is_superuser': is_superuser,
+            response.data,
             status=status.HTTP_200_OK
         )
     
