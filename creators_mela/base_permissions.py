@@ -1,5 +1,5 @@
 from rest_framework import permissions
-from events.models import RegisteredSession
+from users.models import RegisteredSession
 
 class IsAdminOrSessionOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
