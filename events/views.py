@@ -1,10 +1,16 @@
 from django.utils import timezone
+from django.db.models import Count
 
-from events.models import Session, RegisteredSession
+from events.models import Session, Hall
+from users.models import RegisteredSession
+
 from events.serializers import (
         SessionSerializer,
         SessionListSerializer,
-        OngoingSessionSerializer
+        OngoingSessionSerializer,
+        SessionUnAuthenticatedUserSerializer,
+        SessionAuthenticatedUserSerializer,
+        SessionDateSerializer
     )
 
 from rest_framework import generics
@@ -17,99 +23,72 @@ from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 
 
-# class EventListAPIView(generics.ListAPIView):
-#     queryset = Event.objects.all()
-#     serializer_class = EventSerializer
-#     permission_classes = (permissions.AllowAny,)
-#     filter_backends = (DjangoFilterBackend, SearchFilter)
-#     search_fields = ('name', 'venue', 'slug')
-#     fiterset_fields = ('date',)
+class SessionDateListAPIView(generics.ListAPIView):
+    queryset = Session.objects.values('date').distinct()
+    serializer_class = SessionDateSerializer
+    permission_classes = (permissions.AllowAny,)
 
 
-# class EventCreateAPIView(generics.CreateAPIView):
-#     queryset = Event.objects.all()
-#     serializer_class = EventSerializer
-#     permission_classes = (permissions.IsAdminUser,)
-
-
-# class EventRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-#     queryset = Event.objects.all()
-#     serializer_class = EventSerializer
-#     permission_classes = (permissions.IsAdminUser,)
-
-
-# class SessionCreateAPIView(APIView):
-#     permission_classes = (permissions.IsAdminUser,)
-
-#     def post(self, request, slug, *args, **kwargs):
-#         try:
-#             event = Event.objects.get(slug=slug)
-        
-#         except Event.DoesNotExist:
-#             return Response(
-#                 {'message': 'Event doesn\'t exist!'},
-#                 status=status.HTTP_404_NOT_FOUND
-#             )
-        
-#         serializer = SessionSerializer(data=request.data, context={'event': event})
-#         if serializer.is_valid():
-#             serializer.save()
-
-#             return Response(
-#                 {
-#                     'message': 'Session Created Successfully!',
-#                     'data': serializer.data
-#                 },
-#                 status=status.HTTP_201_CREATED
-#             )
-        
-#         return Response(
-#             {
-#                 'errors': serializer.errors
-#             },
-#             status=status.HTTP_400_BAD_REQUEST
-#         )
-
-
-# class SessionInEventAPIView(generics.ListAPIView):
-#     serializer_class = SessionListSerializer
-#     permission_classes = (permissions.IsAuthenticated,)
-
-#     def get_queryset(self):
-#         slug = self.kwargs.get('slug')
-
-#         if slug:
-#             try:
-#                 self.event = Event.objects.get(slug=slug)
-#             except Event.DoesNotExist:
-#                 return Response(
-#                     {'message': "Event doesn't exist!"},
-#                     status=status.HTTP_404_NOT_FOUND
-#                 )
-#             return Session.objects.filter(event=self.event)
-#         else:
-#             self.event = None
-#             return Session.objects.all()
-
-
-    # def get_serializer_context(self):
-    #     context = super().get_serializer_context()
-    #     context.update({'request': self.request})
-    #     return context
-
-
-    # def list(self, request, *args, **kwargs):
-    #     queryset = self.get_queryset()
-    #     serializer = self.get_serializer(queryset, many=True)
-
-    #     return Response(
-    #         {
-    #             'event': self.event.name,
-    #             'data': serializer.data,
-    #         },
-    #         status=status.HTTP_200_OK
-    #     )
+class SessionsScheduleAPIView(APIView):
+    permission_classes = (permissions.AllowAny,)
     
+    def get(self, request, *args, **kwargs):
+        date = request.query_params.get('date')
+
+        ongoing_sessions_count = Session.objects.filter(
+            date = timezone.localtime(timezone.now()).date(),
+            start_time__lte = timezone.localtime(timezone.now()).time(),
+            end_time__gte = timezone.localtime(timezone.now()).time() 
+        ).count()
+
+        sessions_count = Session.objects.filter(
+            date = date
+        ).count()
+
+        if date:
+            halls = Session.objects.filter(date=date).values_list('hall', flat=True).distinct()
+            data = []
+
+            for hall in halls:
+                hall_instance = Hall.objects.get(id=hall)
+                sessions_for_hall = Session.objects.filter(hall=hall_instance, date=date)
+                
+                session_data = []
+                
+                for session in sessions_for_hall:
+                    if request.user.is_authenticated:
+                        session_result = SessionAuthenticatedUserSerializer(session).data
+                    else:
+                        session_result = SessionUnAuthenticatedUserSerializer(session).data
+
+                    session_data.append({
+                        'session': session_result,
+                    })
+                data.append({
+                    'hall_name': hall_instance.hall_name,
+                    'venue': hall_instance.venue,
+                    'location': hall_instance.location,
+                    'sessions': session_data
+                })
+        else:
+            halls = Session.objects.none
+            return Response({'message': "No Dates selected!"}, status=status.HTTP_204_NO_CONTENT)
+
+        return Response(
+            {
+                'session_count': sessions_count,
+                'ongoing_sessions': ongoing_sessions_count,
+                'data': data
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+class SessionCreateAPIView(generics.CreateAPIView):
+    queryset = Session.objects.all()
+    permission_classes = (permissions.IsAdminUser,)
+    serializer_class = SessionSerializer
+
 
 class SessionRetrieveUpdateDestroyAPIView(APIView):
     permission_classes = (permissions.IsAdminUser,)
@@ -125,9 +104,13 @@ class SessionRetrieveUpdateDestroyAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         serializer = SessionListSerializer(session)
+        number_of_attendees = RegisteredSession.objects.filter(session=session).count()
 
         return Response(
-            {'data': serializer.data},
+            {
+                'data': serializer.data,
+                'attendees': number_of_attendees
+            },
             status=status.HTTP_200_OK
         )
 
@@ -143,7 +126,7 @@ class SessionRetrieveUpdateDestroyAPIView(APIView):
                 },
                 status=status.HTTP_404_NOT_FOUND
             )
-        serializer = SessionSerializer(session, data=request.data, partial=True)
+        serializer = SessionListSerializer(session, data=request.data, partial=True)
         
         if serializer.is_valid():
             serializer.save()
@@ -186,7 +169,7 @@ class OngoingSessionListAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
         ongoing_sessions = Session.objects.filter(
-            event__date = timezone.localtime(timezone.now()).date(),
+            date = timezone.localtime(timezone.now()).date(),
             start_time__lte = timezone.localtime(timezone.now()).time(),
             end_time__gte = timezone.localtime(timezone.now()).time() 
         )
@@ -204,21 +187,39 @@ class OngoingSessionListAPIView(APIView):
         )
     
 
-# class EventDetailListAPIView(APIView):
-#     permission_classes = (permissions.AllowAny,)
 
-#     def get(self, request, slug, *args, **kwargs):
-#         try:
-#             event = Event.objects.get(slug=slug)
-#         except Event.DoesNotExist:
-#             return Response(
-#                 {'message': "Provided Event doesn't exist!"},
-#                 status=status.HTTP_404_NOT_FOUND
-#             )
+class CalendarDetailAPIView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+
+        if not start_date or not end_date:
+            return Response(
+                {"error": "start_date and end_date are required parameters"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        sessions = Session.objects.filter(
+            date__gte = start_date,
+            date__lte = end_date
+        ).values('date').annotate(count=Count('id'))
+
         
-#         serializer = EventDetailSerializer(event)
+        data = [
+            {
+                'date': session['date'],
+                'count': session['count']
+            }
+            for session in sessions
+        ]
 
-#         return Response(
-#             serializer.data,
-#             status=status.HTTP_200_OK
-#         )
+        return Response(
+            {'date': data}, 
+            status=status.HTTP_200_OK
+        )    
+    
+
+
+## VIEWS RELATED TO SESSION REGISTRATIONS 
