@@ -77,9 +77,9 @@ class ProfileListSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
-    province = ProvinceNameSerializer()
-    district = DistrictNameSerializer()
-    municipality = MunicipalityNameSerializer()
+    # province = ProvinceNameSerializer()
+    # district = DistrictNameSerializer()
+    # municipality = MunicipalityNameSerializer()
     profile_social_media_links = SocialMediaSerializer(many=True, read_only=True)
 
     class Meta:
@@ -88,7 +88,9 @@ class ProfileSerializer(serializers.ModelSerializer):
             'user',
             'profile_picture',
             'bio',
-            'age',
+            'date_of_birth',
+            # 'age',
+            'phone',
             'gender',
             'province',
             'district',
