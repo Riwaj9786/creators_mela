@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from accounts.models import Profile
+from accounts.models import Profile, SocialMediaLinks
 from accounts.serializers import UserApplySerializer, UserNameUpdateSerializer
 
 from users.models import RegisteredSession
@@ -9,11 +9,17 @@ from federal.serializers import ProvinceSerializer, DistrictBriefSerializer
 
 
 # Create your views here.
+class SocialMediaURLSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SocialMediaLinks
+        fields = ('url',)
+
 class ProfilePicSerializer(serializers.ModelSerializer):
     user = UserNameUpdateSerializer(read_only=True)
+    social_media = SocialMediaURLSerializer(read_only=True, many=True)
     class Meta:
         model = Profile
-        fields = ('user', 'profile_picture', 'is_international')
+        fields = ('user', 'profile_picture', 'is_international', 'social_media')
 
 
 class TeamListSerializer(serializers.ModelSerializer):
