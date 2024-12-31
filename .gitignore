@@ -1,6 +1,5 @@
-../virtualenv/
-static/
-media/
+../venv/
+/media/
+/static/
 
-.gitignore
 .env
