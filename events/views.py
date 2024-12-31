@@ -33,52 +33,63 @@ class SessionsScheduleAPIView(APIView):
     permission_classes = (permissions.AllowAny,)
     
     def get(self, request, *args, **kwargs):
+        # Obtain Date passed from the query parameters
         date = request.query_params.get('date')
 
+        # Fetch the current date
+        now = timezone.localtime(timezone.now())
+        today = now.date()
+
+        # Obtain the Ongoing Sessions in the current time
         ongoing_sessions_count = Session.objects.filter(
-            date = timezone.localtime(timezone.now()).date(),
-            start_time__lte = timezone.localtime(timezone.now()).time(),
-            end_time__gte = timezone.localtime(timezone.now()).time() 
-        ).count()
+                date = today,
+                start_time__lte = now.time(),
+                end_time__gte = now.time() 
+            ).count()
 
-        sessions_count = Session.objects.filter(
-            date = date
-        ).count()
+        # Obtain the total numboer of Sessions that day
+        sessions_count = Session.objects.filter(date = date).count()
 
-        if date:
-            halls = Session.objects.filter(date=date).values_list('hall', flat=True).distinct()
-            data = []
+        # Fetch the sessions that day with the related halls
+        sessions = Session.objects.select_related(
+                'hall'
+            ).prefetch_related(
+                'speakers',
+                'attendees'
+            ).filter(date=date)
+        
+        halls = Hall.objects.prefetch_related('sessions').filter(id__in=sessions.values_list('hall_id', flat=True)).distinct()
 
-            for hall in halls:
-                hall_instance = Hall.objects.get(id=hall)
-                sessions_for_hall = Session.objects.filter(hall=hall_instance, date=date)
-                
-                session_data = []
-                
-                for session in sessions_for_hall:
-                    if request.user.is_authenticated:
-                        session_result = SessionAuthenticatedUserSerializer(session).data
-                    else:
-                        session_result = SessionUnAuthenticatedUserSerializer(session).data
+        data = []
+        hall_sessions_map = {}
+        
+        for session in sessions:
+            hall_id = session.hall_id
+            if hall_id not in hall_sessions_map:
+                hall_sessions_map[hall_id] = []
+            
 
-                    session_data.append({
-                        'session': session_result,
-                    })
-                data.append({
-                    'hall_name': hall_instance.hall_name,
-                    'venue': hall_instance.venue,
-                    'location': hall_instance.location,
-                    'sessions': session_data
-                })
-        else:
-            halls = Session.objects.none
-            return Response({'message': "No Dates selected!"}, status=status.HTTP_204_NO_CONTENT)
+            session_serializer = (
+                SessionAuthenticatedUserSerializer(session) if request.user.is_authenticated
+                else SessionUnAuthenticatedUserSerializer(session)
+            )
+            hall_sessions_map[hall_id].append({
+                'session': session_serializer.data,
+        })
+        
+        for hall in halls:
+            data.append({
+                'hall_name': hall.hall_name,
+                'venue': hall.venue,
+                'location': hall.location,
+                'sessions': hall_sessions_map.get(hall.id, [])
+            })
 
         return Response(
             {
                 'session_count': sessions_count,
                 'ongoing_sessions': ongoing_sessions_count,
-                'data': data
+                'data': data,
             },
             status=status.HTTP_200_OK
         )
@@ -95,7 +106,7 @@ class SessionRetrieveUpdateDestroyAPIView(APIView):
 
     def get(self, requser, slug, *args, **kwargs):
         try:
-            session = Session.objects.get(slug=slug)
+            session = Session.objects.select_related('hall').prefetch_related('moderator', 'speakers', 'attendees', 'performers').get(slug=slug)
         except Session.DoesNotExist:
             return Response(
                 {

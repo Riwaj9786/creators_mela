@@ -5,7 +5,7 @@ from events import views
 urlpatterns = [
     path('schedule/', views.SessionsScheduleAPIView.as_view(), name='date_wise'),
     path('calendar/', views.CalendarDetailAPIView.as_view(), name='calendar_view'),
-    path('session/get/<slug:slug>/', views.SessionRetrieveUpdateDestroyAPIView.as_view(), name="session_retrieve_update_delete"),
+    path('session/update/<slug:slug>/', views.SessionRetrieveUpdateDestroyAPIView.as_view(), name="session_retrieve_update_delete"),
 
     path('session/dates/', views.SessionDateListAPIView.as_view(), name='session_dates'),
 
