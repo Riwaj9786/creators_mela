@@ -8,6 +8,7 @@ from rest_framework.filters import SearchFilter
 # Create your views here.
 class ProvinceListAPIView(generics.ListAPIView):
     queryset = Province.objects.all()
+    # queryset = Province.objects.prefetch_related('district_in_province__municipality_in_district')
     serializer_class = ProvinceSerializer
     permission_classes = (AllowAny,)
     filter_backends = (SearchFilter,)
@@ -16,7 +17,8 @@ class ProvinceListAPIView(generics.ListAPIView):
 
 
 class DistrictListAPIView(generics.ListAPIView):
-    queryset = District.objects.all()
+    # queryset = District.objects.all()
+    queryset = District.objects.select_related('province').prefetch_related('municipality_in_district')
     serializer_class = DistrictSerializer
     permission_classes = (AllowAny,)
     filter_backends = (DjangoFilterBackend, SearchFilter)
@@ -26,7 +28,8 @@ class DistrictListAPIView(generics.ListAPIView):
 
 
 class MunicipalityListAPIView(generics.ListAPIView):
-    queryset = Municipality.objects.all()
+    queryset = Municipality.objects.prefetch_related('district__province')
+    # queryset = Municipality.objects.all()
     serializer_class = MunicipalitySerializer
     permission_classes = (AllowAny,)
     filter_backends = (DjangoFilterBackend, SearchFilter)
