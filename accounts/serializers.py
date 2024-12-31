@@ -56,14 +56,14 @@ class ProfileListSerializer(serializers.ModelSerializer):
     province = ProvinceNameSerializer()
     district = DistrictNameSerializer()
     municipality = MunicipalityNameSerializer()
-    profile_social_media_links = SocialMediaSerializer(many=True, read_only=True)
+    social_media = SocialMediaSerializer(many=True, read_only=True)
 
     class Meta:
         model = Profile
         fields = (
             'created_at',
             'user',
-            'profile_social_media_links',
+            'social_media',
             'phone',
             'age',
             'gender',
@@ -77,25 +77,22 @@ class ProfileListSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
-    # province = ProvinceNameSerializer()
-    # district = DistrictNameSerializer()
-    # municipality = MunicipalityNameSerializer()
-    profile_social_media_links = SocialMediaSerializer(many=True, read_only=True)
+    social_media = SocialMediaSerializer(many=True, read_only=True)
 
     class Meta:
         model = Profile
         fields = (
+            'id',
             'user',
             'profile_picture',
             'bio',
             'date_of_birth',
-            # 'age',
             'phone',
             'gender',
             'province',
             'district',
             'municipality',
-            'profile_social_media_links',
+            'social_media',
             'interest',
             'heard_from'
         )
@@ -153,3 +150,9 @@ class InviteSerializer(serializers.Serializer):
         child = serializers.EmailField(),
         allow_empty = False
     )
+
+
+class PlatformIDSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Platform
+        fields = ('id', 'platform_name')

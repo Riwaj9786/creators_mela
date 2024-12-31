@@ -3,9 +3,8 @@ import os
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
-from django.db.models.signals import post_save, pre_delete
+from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.contrib.auth import get_user_model
 from django.utils.text import slugify
 from django.utils import timezone
 
@@ -250,6 +249,7 @@ class Profile(BaseModel):
 class Platform(models.Model):
     platform_name = models.CharField(max_length=125)
 
+
     def __str__(self):
         return self.platform_name     
 
@@ -257,7 +257,7 @@ class Platform(models.Model):
 
 
 class SocialMediaLinks(models.Model):
-    profile = models.ForeignKey(Profile, on_delete=models.PROTECT, related_name='profile_social_media_links')
+    profile = models.ForeignKey(Profile, on_delete=models.PROTECT, related_name='social_media')
     platform = models.ForeignKey(Platform, on_delete=models.PROTECT, related_name='platform', null=True, blank=True)
     url = models.URLField()
 
