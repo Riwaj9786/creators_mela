@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.http import HttpRequest
 from accounts.models import AppUser, Profile, SocialMediaLinks, UserType, Platform
 
 # Register your models here.

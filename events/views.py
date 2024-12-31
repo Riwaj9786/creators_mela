@@ -18,9 +18,6 @@ from rest_framework.views import APIView
 from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.filters import SearchFilter
-
-from django_filters.rest_framework import DjangoFilterBackend
 
 
 class SessionDateListAPIView(generics.ListAPIView):

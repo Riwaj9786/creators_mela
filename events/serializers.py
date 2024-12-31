@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from events.models import Hall, Session
 
-from accounts.models import Profile, AppUser
+from accounts.models import Profile
 
 
 class SessionDateSerializer(serializers.ModelSerializer):

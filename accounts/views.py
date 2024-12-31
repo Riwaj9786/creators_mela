@@ -1,8 +1,6 @@
 from datetime import timedelta
 import random
 
-# from creators_mela.base_permissions import IsOwner, IsAdminOrSessionOwner
-
 from accounts.models import (
     AppUser,
     Profile,
@@ -12,7 +10,6 @@ from accounts.models import (
 )
 
 from accounts.serializers import (
-    # ProfileListSerializer,
     UserApplySerializer,
     ProfileSerializer,
     LoginSerializer,
@@ -25,9 +22,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
-# from rest_framework.filters import SearchFilter
 
-# from django_filters.rest_framework import DjangoFilterBackend
 
 from django.contrib.auth import login
 from django.shortcuts import get_object_or_404
@@ -64,7 +59,6 @@ class LoginAPIView(knox_views.LoginView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(
-            # 'is_superuser': is_superuser,
             response.data,
             status=status.HTTP_200_OK
         )
@@ -317,7 +311,6 @@ class SocialMediaLinkAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
         profile = get_object_or_404(Profile, user=request.user)
-        # social_media = SocialMediaLinks.objects.filter(profile=profile)
         social_media = SocialMediaLinks.objects.filter(profile=profile).select_related('platform')
 
         serializer = SocialMediaSerializer(social_media, many=True)

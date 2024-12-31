@@ -5,7 +5,6 @@ from events.models import Session
 
 from users.models import InvitedEmail, RegisteredSession
 from users.serializers import (
-    AboutMeSerializers,
     RegisteredSessionSerializer,
     ProfilePicSerializer,
     TeamListSerializer
@@ -24,7 +23,6 @@ from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
 
 from django.conf import settings
-from django.core.mail import send_mail
 from django.urls import reverse
 
 

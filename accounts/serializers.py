@@ -5,7 +5,6 @@ from accounts.models import AppUser, Profile, SocialMediaLinks, UserType, Platfo
 from federal.serializers import ProvinceNameSerializer, DistrictNameSerializer, MunicipalityNameSerializer
 
 from django.contrib.auth import authenticate
-from django.core.validators import validate_email 
 from django.utils import timezone
 
 

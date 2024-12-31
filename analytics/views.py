@@ -5,13 +5,11 @@ from collections import Counter
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import generics
 from rest_framework.permissions import IsAdminUser
 from rest_framework import status
 
-from federal.serializers import ProvinceSerializer
 
-from django.db.models import Count, F
+from django.db.models import Count
 from django.utils import timezone
 
 from drf_yasg.utils import swagger_auto_schema

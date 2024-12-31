@@ -1,6 +1,5 @@
 from django.contrib import admin
 from faqs.models import FrequentlyAskedQuestion
-from faqs.serializers import FAQSerializer
 
 # Register your models here.
 @admin.register(FrequentlyAskedQuestion)
