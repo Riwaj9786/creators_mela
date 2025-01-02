@@ -55,6 +55,7 @@ class LoginAPIView(knox_views.LoginView):
             is_superuser = user.is_superuser
             response = super().post(request, format=None)
             response.data['is_superuser'] = is_superuser
+            print(type(response.data['token']))
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

@@ -71,7 +71,7 @@ class Session(models.Model):
         }
     )
     speakers = models.ManyToManyField(
-        'accounts.Profile',
+        'accounts.Profile', 
         related_name = 'session_speakers',
         blank=True,
         limit_choices_to = {
