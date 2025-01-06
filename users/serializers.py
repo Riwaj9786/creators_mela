@@ -19,14 +19,14 @@ class ProfilePicSerializer(serializers.ModelSerializer):
     social_media = SocialMediaURLSerializer(read_only=True, many=True)
     class Meta:
         model = Profile
-        fields = ('user', 'profile_picture', 'is_international', 'social_media')
+        fields = ('id', 'user', 'profile_picture', 'is_international', 'social_media')
 
 
 class TeamListSerializer(serializers.ModelSerializer):
     user = UserApplySerializer(read_only=True)
     class Meta:
         model = Profile
-        fields = ('user', 'created_at')
+        fields = ('id', 'user', 'created_at')
 
 
 class RegisteredSessionSerializer(serializers.ModelSerializer):
