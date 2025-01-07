@@ -80,21 +80,22 @@ class SessionSerializer(serializers.ModelSerializer):
         banner = validated_data.pop('banner', None)
 
         session = Session(**validated_data) #type: ignore
-
+        
+        if banner:
+            session.banner = banner
+        
         try:
             session.save()
             session.clean()
         except ValidationError as e:
             raise serializers.ValidationError(e.message)
-        
-        if banner:
-            session.banner = banner
-            session.save()
 
         session.moderator.set(moderator_data)
         session.speakers.set(speakers_data)
         session.performers.set(performers_data)
         session.attendees.set(attendees_data)
+
+        session.save()
 
         return session
 
