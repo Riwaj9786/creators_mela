@@ -131,7 +131,7 @@ class SessionListSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if obj.banner and request:
             base_url = request.scheme + "://" + request.get_host()
-            return f"{base_url}{settings.MEDIA_URL}{obj.banner.url}"
+            return f"{base_url}{obj.banner.url}"
         return None
     
     def get_speakers(self, obj):
