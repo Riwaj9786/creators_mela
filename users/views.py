@@ -32,7 +32,8 @@ class AnonymousUserSpeakerAPIView(generics.ListAPIView):
         ).prefetch_related(
             'social_media'
         ).filter(
-            user__user_type__name="speaker"
+            user__user_type__name="speaker",
+            status = "Accepted"
         )
     serializer_class = ProfilePicSerializer
     permission_classes = (AllowAny,)
@@ -44,7 +45,8 @@ class AnonymousUserPerformerAPIView(generics.ListAPIView):
         ).prefetch_related(
             'social_media'
         ).filter(
-            user__user_type__name="performer"
+            user__user_type__name="performer",
+            status = "Accepted"
         )
     serializer_class = ProfilePicSerializer
     permission_classes = (AllowAny,)
