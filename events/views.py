@@ -101,7 +101,7 @@ class SessionCreateAPIView(generics.CreateAPIView):
 class SessionRetrieveUpdateDestroyAPIView(APIView):
     permission_classes = (permissions.IsAdminUser,)
 
-    def get(self, requser, slug, *args, **kwargs):
+    def get(self, request, slug, *args, **kwargs):
         try:
             session = Session.objects.select_related('hall').prefetch_related('moderator', 'speakers', 'attendees', 'performers').get(slug=slug)
         except Session.DoesNotExist:
@@ -111,9 +111,9 @@ class SessionRetrieveUpdateDestroyAPIView(APIView):
                 },
                 status=status.HTTP_404_NOT_FOUND
             )
-        serializer = SessionListSerializer(session)
+        serializer = SessionListSerializer(session, context={'request': request})
         number_of_attendees = RegisteredSession.objects.filter(session=session).count()
-
+        print(serializer.data)
         return Response(
             {
                 'data': serializer.data,
@@ -134,7 +134,7 @@ class SessionRetrieveUpdateDestroyAPIView(APIView):
                 },
                 status=status.HTTP_404_NOT_FOUND
             )
-        serializer = SessionListSerializer(session, data=request.data, partial=True)
+        serializer = SessionListSerializer(session, data=request.data, partial=True, context={'request': request})
         
         if serializer.is_valid():
             serializer.save()

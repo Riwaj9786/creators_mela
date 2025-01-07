@@ -1,11 +1,15 @@
 import json
 
 from django.core.exceptions import ValidationError
+from django.conf import settings
+
 from rest_framework import serializers
 
 from events.models import Hall, Session
 
 from accounts.models import Profile
+
+from urllib.parse import urljoin
 
 
 class SessionDateSerializer(serializers.ModelSerializer):
@@ -102,6 +106,7 @@ class SessionSerializer(serializers.ModelSerializer):
 
 
 class SessionListSerializer(serializers.ModelSerializer):
+    banner = serializers.SerializerMethodField()
     speakers = serializers.SerializerMethodField()
     performers = serializers.SerializerMethodField()
     moderator = serializers.SerializerMethodField()
@@ -122,6 +127,13 @@ class SessionListSerializer(serializers.ModelSerializer):
             'slug'
         )
     
+    def get_banner(self, obj):
+        request = self.context.get('request')
+        if obj.banner and request:
+            base_url = request.scheme + "://" + request.get_host()
+            return f"{base_url}{settings.MEDIA_URL}{obj.banner.url}"
+        return None
+    
     def get_speakers(self, obj):
         return SpeakerNameProfilePicSerializer(obj.speakers, many=True).data
     
@@ -140,8 +152,6 @@ class HallSessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hall
         fields = ('hall_name', 'hall')
-
-
 
 
 class OngoingSessionSerializer(serializers.ModelSerializer):
