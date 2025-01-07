@@ -1,3 +1,5 @@
+import json
+
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
@@ -61,23 +63,22 @@ class SessionAuthenticatedUserSerializer(serializers.ModelSerializer):
 
 
 class SessionSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Session
         fields = [
             'id', 'session_name', 'banner', 'description', 'date',
             'total_seats', 'start_time', 'end_time', 'hall',
-            'moderator', 'speakers', 'performers', 'attendees'
+            'moderator', 'speakers', 'performers', 'attendees', 'slug'
         ]
 
     def create(self, validated_data):
-        # Handle many-to-many fields separately
         moderator_data = validated_data.pop('moderator', [])
         speakers_data = validated_data.pop('speakers', [])
         performers_data = validated_data.pop('performers', [])
         attendees_data = validated_data.pop('attendees', [])
 
-        # Create the session instance in memory but not in the databse yet
+        banner = validated_data.pop('banner', None)
+
         session = Session(**validated_data) #type: ignore
 
         try:
@@ -86,15 +87,17 @@ class SessionSerializer(serializers.ModelSerializer):
         except ValidationError as e:
             raise serializers.ValidationError(e.message)
         
-        session.save()
+        if banner:
+            session.banner = banner
+            session.save()
 
-        # Add many-to-many relationships
         session.moderator.set(moderator_data)
         session.speakers.set(speakers_data)
         session.performers.set(performers_data)
         session.attendees.set(attendees_data)
 
         return session
+
 
 
 class SessionListSerializer(serializers.ModelSerializer):
@@ -114,7 +117,8 @@ class SessionListSerializer(serializers.ModelSerializer):
             'moderator', 
             'speakers', 
             'performers',
-            'attendees'
+            'attendees',
+            'slug'
         )
     
     def get_speakers(self, obj):
