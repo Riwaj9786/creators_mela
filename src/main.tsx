@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 import { register } from "swiper/element/bundle";
-import { store } from "./app/store.tsx";
+import { store } from "./app/store.ts";
 import { BrowserRouter } from "react-router-dom";
 import { Provider } from "react-redux";
 register();

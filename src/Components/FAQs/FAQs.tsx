@@ -1,57 +1,69 @@
-// import React from 'react'
-import AboutHCGUP from "../../assets/Icons/Vector (1).png";
-import AboutHCGDOWN from "../../assets/Icons/Vector (2).png";
-import { faqs } from "../../assets/ComponentsData/FAQsData";
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { faqSelector, fetchFAQs } from "../../app/features/faqSlice";
+import Uparrow from "../../assets/Icons/UpArrow.svg";
+import Downarrow from "../../assets/Icons/DownArrow.svg";
+import { AppDispatch } from "../../app/store";
+import { useLocation } from "react-router-dom";
 
 const FAQ = () => {
-  const [dropDown, setDropDown] = useState(false);
-  const [selected, setSelected] = useState(null);
+  const { pathname } = useLocation();
+  const dispatch = useDispatch<AppDispatch>();
+  const { faqs, status, error } = useSelector(faqSelector);
 
-  // console.log("value", dropDown, selected);
-  const changeState = (id) => {
-    setDropDown(!dropDown);
-    setSelected(id);
+  const homePageFaq = faqs.slice(0, 5);
+
+  const [selected, setSelected] = useState(null);
+  // console.log(faqs.length,faqs, "length");
+
+  useEffect(() => {
+    if (status === "idle") {
+      dispatch(fetchFAQs());
+    }
+  }, [dispatch, status]);
+
+  const toggleDropdown = (id) => {
+    setSelected((prev) => (prev === id ? null : id));
   };
 
-  const FAQs = faqs;
+  if (status === "loading") {
+    return <p className="text-white">Loading FAQs...</p>;
+  }
+
+  if (status === "failed") {
+    return <p className="text-red-500">Error: {error}</p>;
+  }
 
   return (
-    <>
-      <div className="px-[28px]">
-        {FAQs.map((items, index) => (
-          <ul key={index} className="flex flex-col">
-            <li className="border-t border-[#0C4E47] text-[#0C4E47] h-[73px] flex items-center justify-between font-bold text-[16px]">
-              <span
-                onClick={() => changeState(index)}
-                className="cursor-pointer"
-              >
-                {items.question}
+    <ul className="faq-container">
+      {(faqs?.length > 0 && pathname === "/" ? homePageFaq : faqs)?.map(
+        (item, index) => (
+          <li key={index} className="flex flex-col gap-[40px] border-b border-[#BBBAD2] ">
+            <div
+              onClick={() => toggleDropdown(index)}
+              className=" flex justify-between pt-[46px] pb-[20px]"
+            >
+              <span className="cursor-pointer text-[#AFFDE4] text-[34px] font-[500] leading-none">
+                {item.question}
               </span>
 
-              <button
-                className="cursor-pointer "
-                onClick={() => changeState(index)}
-              >
-                {dropDown && selected === index ? (
-                  <img src={AboutHCGUP} alt="" />
+              <button className="cursor-pointer">
+                {selected === index ? (
+                  <img src={Uparrow} alt="Collapse FAQ" />
                 ) : (
-                  <img src={AboutHCGDOWN} alt="" />
+                  <img src={Downarrow} alt="Expand FAQ" />
                 )}
               </button>
-            </li>
-            {dropDown && selected === index ? (
-              <li className="border-t border-[#0C4E47] text-[#0C4E47] h-[73px] flex items-center">
-                {items.answer}
-              </li>
-            ) : (
-              ""
+            </div>
+            {selected === index && (
+              <div className="text-[#BDDFD2] text-[24px] font-[500] leading-none">
+                {item.answer}
+              </div>
             )}
-          </ul>
-        ))}
-      </div>
-    </>
+          </li>
+        )
+      )}
+    </ul>
   );
 };
 

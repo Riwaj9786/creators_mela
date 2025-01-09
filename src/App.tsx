@@ -1,21 +1,20 @@
-import React from "react";
-import HomePage from "./Pages/HomePage/HomePage";
-
 import "../src/App.css";
-import { Route, Routes } from "react-router-dom";
-import { allRoutes } from "./app/features/RouteSetting";
-import PageError from "./Pages/ErrorPage/PageError";
+import BGImage from "../src/assets/Images/BackgroundImage.jpg";
+import AppRoutes from "./Routes/AppRoutes";
 
-const App = () => {
+const App: React.FC = () => {
   return (
-    <div>
-      {/* <HomePage /> */}
-      <Routes>
-        {allRoutes.map((route) => (
-          <Route key={route.id} path={route.path} element={route.element} />
-        ))}
-        <Route path="*" element={<PageError />} />
-      </Routes>
+    <div
+      style={{
+        backgroundImage: `url(${BGImage})`,
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "cover",
+        backgroundPosition: "center center",
+      }}
+    >
+      <div className="min-h-screen ">
+        <AppRoutes />
+      </div>
     </div>
   );
 };

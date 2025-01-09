@@ -17,11 +17,35 @@
   }
 }
 
-
 .navabrImage {
-  background-image: url('./assets//images//Navbar.svg');
+  background-image: url("./assets//images//Navbar.svg");
   background-repeat: no-repeat;
   background-size: cover;
   object-fit: cover;
   background-position: left top;
+}
+
+.container {
+  padding-left: 50px;
+  padding-right: 50px;
+  padding-top: 131px;
+  padding-bottom: 66px;
+}
+
+.gradient-text {
+  background: linear-gradient(to right, #ff1c8b, #f05a2a, #65e3c3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  /* text-fill-color: transparent; */
+}
+
+.no-scrollbar::-webkit-scrollbar  {
+  display: none;
+}
+
+
+.scrollbar::-webkit-scrollbar{
+  box-shadow: inset 0 0 5px grey;
+  border-radius: 10px;
 }
