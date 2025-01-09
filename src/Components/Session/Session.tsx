@@ -136,22 +136,20 @@ const Session = () => {
       formData.append("end_time", data.end_time);
       formData.append("hall", data.hall);
 
-      // Append the banner file (if provided)
+      
       if (data.banner && data.banner[0]) {
         formData.append("banner", data.banner[0]);
       }
 
-      // Append speakers (array of IDs)
+      
       selectedSpeakers.forEach((speaker) =>
         formData.append("speakers", speaker.value)
       );
 
-      // Append performers (array of IDs)
       selectedPerformers.forEach((performer) =>
         formData.append("performers", performer.value)
       );
 
-      // Send the POST request
       const response = await axios.post(
         `${BASE_URL}/events/session/create/`,
         formData,
@@ -165,7 +163,6 @@ const Session = () => {
       const slug = response.data.slug;
       navigate(`/SessionPreview/${slug}`);
     } catch (error) {
-      // Handle errors
       console.error(
         "Error creating session:",
         error.response?.data || error.message
@@ -495,7 +492,7 @@ const Session = () => {
                   })}
                   placeholder="Enter Session Description"
                   className="w-full h-[120px] rounded-[10px] border border-[#FFFFFF80] bg-[#FFFFFFB2] text-[#000000] font-[400] text-[14px] p-3 resize-none"
-                  onChange={(e) => setDescription(e.target.value)} // Local state to track input
+                  onChange={(e) => setDescription(e.target.value)} 
                 />
                 {errors.description && (
                   <p className="text-red-500 text-sm mt-1">
@@ -503,7 +500,7 @@ const Session = () => {
                   </p>
                 )}
 
-                {/* Character count */}
+               
                 <span className="absolute bottom-2 right-3 text-[#B1AEC2] text-[12px] font-[400]">
                   {description.length}/500 Characters
                 </span>

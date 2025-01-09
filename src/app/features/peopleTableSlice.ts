@@ -90,17 +90,17 @@ const peopleTableSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchPeopleData.pending, (state) => {
-        // console.log("Fetch people data pending");
+        // console.log("pending");
         state.status = "loading";
         state.error = "";
       })
       .addCase(fetchPeopleData.fulfilled, (state, action) => {
-        // console.log("Fetch people data fulfilled", action);
+        // console.log("fulfilled", action);
         state.status = "succeeded";
         state.peopleData = action.payload;
       })
       .addCase(fetchPeopleData.rejected, (state, action) => {
-        // console.error("Fetch people data rejected", action.payload);
+        // console.error(" rejected", action.payload);
         state.status = "failed";
         state.error = action.payload as string;
       });
